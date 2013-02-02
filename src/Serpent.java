@@ -2,6 +2,9 @@ import edu.rit.util.Hex;
 
 public class Serpent implements BlockCipher {
 
+	private int keySize;
+	private byte[] key;
+
 	public Serpent() {
 
 	}
@@ -32,6 +35,23 @@ public class Serpent implements BlockCipher {
 	 * @param  key  Key.
 	 */
 	public void setKey(byte[] key) {
+		if (key.length != keySize()) {
+			this.key = new byte[keySize()];
+			for( int i = 0; i < key.length; i++ ) {
+				this.key[i] = key[i];
+			}
+			for( int i = key.length; i < keySize(); i++ ) {
+				if( i == key.length ) {
+					this.key[i] = (byte)0x80;
+				}else {
+					this.key[i] = (byte)0x00;
+				}
+			}
+		}else {
+			this.key = key;
+		}
+
+		//TODO: Write prekey initialization
 	}
 
 	/**
@@ -77,7 +97,7 @@ public class Serpent implements BlockCipher {
 	 * @param data Input bit sequence
 	 * @param round Number of the current round, used to determine which S-Box to use.
 	 */
-	public byte[] sBox(byte[] data, int round) {
+	private byte[] sBox(byte[] data, int round) {
 		long[] toUse = sBoxes[round%8];
 		byte[] output = new byte[blockSize()];
 		for( int i = 0; i < blockSize(); i++ ) {
@@ -90,8 +110,25 @@ public class Serpent implements BlockCipher {
 		return output;
 	}
 
+	private byte[] getRoundKey(int round) {
+
+	}
+
 	public static void main( String[] args ) {
 		//sBoxTest();
+		//setKeyTest();
+	}
+
+	private static void setKeyTest() {
+		Serpent serpent = new Serpent();
+		byte[] test1 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
+			(byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
+		serpent.setKey( test1 );
+		byte[] test2 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
+			(byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF,
+			0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
+			(byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
+		serpent.setKey( test2 );
 	}
 
 	private static void sBoxTest(){
