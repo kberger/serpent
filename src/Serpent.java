@@ -138,12 +138,24 @@ public class Serpent implements BlockCipher {
         return output;
     }
 
-//  private byte[] getRoundKey(int round) {
-//  }
+    private byte[] getRoundKey(int round) {
+        byte[] k0 = new byte[8];
+        Packing.unpackLongLittleEndian( prekeys,4*round,k0,0,1 );
+        byte[] k1 = new byte[8];
+        Packing.unpackLongLittleEndian( prekeys,4*round+1,k1,0,1 );
+        byte[] k2 = new byte[8];
+        Packing.unpackLongLittleEndian( prekeys,4*round+2,k2,0,1 );
+        byte[] k3 = new byte[8];
+        Packing.unpackLongLittleEndian( prekeys,4*round+3,k3,0,1 );
+
+        byte[] k = new byte[16]{k0[0],k0[1],k0[2],k0[3],k1[0],k1[1],k1[2],k1[3],
+            k2[0],k2[1],k2[2],k2[3],k3[0],k3[1],k3[2],k3[3]};
+        return sBox(k,(3-round)%8);
+    }
 
     public static void main( String[] args ) {
         //sBoxTest();
-        setKeyTest();
+        //setKeyTest();
     }
 
     private static void setKeyTest() {
