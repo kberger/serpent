@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.lang.Integer;
+import java.io.*
 
 public class Serpent implements BlockCipher {
 
@@ -263,25 +264,67 @@ public class Serpent implements BlockCipher {
     }
 
     /**
-     * Main function, sets an all-zero-byte key, performs N encryptions of an all-zero-byte plaintext block
-     * N specified in args
+     * Main function, does one of two things:
+     * sets an all-zero-byte key, performs N encryptions of an all-zero-byte plaintext block
+     * or 
+     * encrypts the contents of the input file, storing the result in an output file
+     * args either specifies N or input file, output file, key, and nonce
      */
     public static void main( String[] args ) {
         Serpent serpent = new Serpent();
-        byte[] test_in = new byte[] {
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-        };
-        byte[] test_key = new byte[] {
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-        };
-        int iters = Integer.parseInt(args[0]);
-        for(int n = 0; n < iters; n++){
-            serpent.setKey(test_key);
-            serpent.encrypt(test_in);
+        if(args.length == 1)
+        {
+            byte[] test_in = new byte[] {
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+            };
+            byte[] test_key = new byte[] {
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+            };
+            int iters = Integer.parseInt(args[0]);
+            for(int n = 0; n < iters; n++){
+                serpent.setKey(test_key);
+                serpent.encrypt(test_in);
+            }
+        }
+        else if (args.length == 4) {
+            //read file
+            File file_in = new File("args[0]");
+            byte [] fileData = new byte[(int)file.length()];
+            DataInputStream in_stream = new DataInputStream((new FileInputStream(file_in)));
+            in_stream.readFully(fileData);
+            in_stream.close();
+            //add nonce to key
+            byte[] key = Hex.toByteArray("args[2]");
+            byte[] nonce = Hex.toByteArray("args[3]");
+            int carry = 0;
+            for(int i = 0; i < key.length && i < nonce.length){
+                carry += (int)key[i] + (int)nonce[i];
+                
+                key[i] = carry & 0x00ff;
+                carry = (carry & 0xff00) >> 8;
+            }
+            //set key
+            serpent.setKey(key);
+            //setup file writing
+            File file_out = new File("args[1]");
+            DataOutputStream out_stream = new DataOutputStream((new FileOutputStream(file_out)));
+            //encrypt
+            for(int i = 0; i < fileData.length; i+=16){
+                byte[] block = new byte[16] {
+                    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+                };
+                for(int n = 0; n < 16 && n < fileData.length; n++){
+                    block[n] = fileData[i+n];
+                }
+                serpent.encrypt(block);
+                out_stream.write(block, 0, block.length);
+            }
+            out_stream.close();
         }
         //sBoxTest();
         //setKeyTest();
