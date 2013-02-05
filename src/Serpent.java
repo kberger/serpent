@@ -292,36 +292,30 @@ public class Serpent implements BlockCipher {
         }
         else if (args.length == 4) {
             //read file
-            File file_in = new File("args[0]");
+            File file_in = new File(args[0]);
             byte [] fileData = new byte[(int)file.length()];
             DataInputStream in_stream = new DataInputStream((new FileInputStream(file_in)));
             in_stream.readFully(fileData);
             in_stream.close();
             //add nonce to key
-            byte[] key = Hex.toByteArray("args[2]");
-            byte[] nonce = Hex.toByteArray("args[3]");
-            int carry = 0;
-            for(int i = 0; i < key.length && i < nonce.length){
-                carry += (int)key[i] + (int)nonce[i];
-                
-                key[i] = carry & 0x00ff;
-                carry = (carry & 0xff00) >> 8;
-            }
+            byte[] key = Hex.toByteArray(args[2]);
             //set key
             serpent.setKey(key);
             //setup file writing
-            File file_out = new File("args[1]");
+            File file_out = new File(args[1]);
             DataOutputStream out_stream = new DataOutputStream((new FileOutputStream(file_out)));
             //encrypt
+            byte[] iv = getRoundKey(Integer.parseInt(args[3]));
             for(int i = 0; i < fileData.length; i+=16){
                 byte[] block = new byte[16] {
                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
                 };
                 for(int n = 0; n < 16 && n < fileData.length; n++){
-                    block[n] = fileData[i+n];
+                    block[n] = fileData[i+n] ^ iv[n];
                 }
                 serpent.encrypt(block);
+                iv = block;
                 out_stream.write(block, 0, block.length);
             }
             out_stream.close();
