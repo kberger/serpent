@@ -46,6 +46,7 @@ public class Serpent implements BlockCipher {
             }
             for( int i = key.length; i < keySize(); i++ ) {
                 if( i == key.length ) {
+                    //Start of padding!
                     this.key[i] = (byte)0x80;
                 }else {
                     this.key[i] = (byte)0x00;
@@ -56,9 +57,11 @@ public class Serpent implements BlockCipher {
         }
 
         //prekey initialization from K
-        for( int i = 0; i < 32; i+=4 ) {
-            prekeys[i] = Packing.packLongLittleEndian( new byte[]{this.key[i],this.key[i+1],this.key[i+2],this.key[i+3], 
-                0x00, 0x00, 0x00, 0x00}, 0 );
+        for(int i = 0; i < 8; i++) {
+            prekeys[i] = Packing.packLongLittleEndian(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3],
+                0x00, 0x00, 0x00, 0x00}, 0);
+            //System.out.println("Prekey " + i + ": " + Hex.toString(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3],
+            //    0x00, 0x00, 0x00, 0x00}));
         }
         //Build out prekey array
         for( int i = 8; i < prekeys.length; i++ ) {
@@ -70,10 +73,11 @@ public class Serpent implements BlockCipher {
             help.putLong((long)0x9e3779b9);
             help.order(ByteOrder.LITTLE_ENDIAN);
             long phi = help.getLong();
-            //(x << n) | (x >>> (32 - n))
+            //(x << n) | (x >>> (32 - n)) Rotate
             prekeys[i] = prekeys[i-8] ^ prekeys[i-5] ^ prekeys[i-3] ^ prekeys[i-1] ^ 
                 valI ^ phi;
             prekeys[i] = (prekeys[i] << 11) | (prekeys[i] >>> (21));
+            //System.out.println("Prekey " + i + ": " + prekeys[i]);
         }
 
     }
@@ -148,7 +152,7 @@ public class Serpent implements BlockCipher {
         byte[] k3 = new byte[8];
         Packing.unpackLongLittleEndian( prekeys,4*round+3,k3,0,1 );
 
-        byte[] k = new byte[16]{k0[0],k0[1],k0[2],k0[3],k1[0],k1[1],k1[2],k1[3],
+        byte[] k = new byte[]{k0[0],k0[1],k0[2],k0[3],k1[0],k1[1],k1[2],k1[3],
             k2[0],k2[1],k2[2],k2[3],k3[0],k3[1],k3[2],k3[3]};
         return sBox(k,(3-round)%8);
     }
@@ -160,14 +164,46 @@ public class Serpent implements BlockCipher {
 
     private static void setKeyTest() {
         Serpent serpent = new Serpent();
+
+        byte[] test3 = new byte[] {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+        serpent.setKey( test3 );
+        System.out.println("Test key: " + Hex.toString(test3));
+        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
+        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
+        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
+        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
+
+        byte[] test4 = new byte[] {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+        serpent.setKey( test4 );
+        System.out.println("Test key: " + Hex.toString(test4));
+        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
+        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
+        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
+        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
+
         byte[] test1 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
             (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
         serpent.setKey( test1 );
+        System.out.println("Testing key setting and round key generation.");
+        System.out.println("Test key: " + Hex.toString(test1));
+        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
+        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
+        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
+        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
+
         byte[] test2 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
             (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF,
             0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
             (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
         serpent.setKey( test2 );
+        System.out.println("Test key: " + Hex.toString(test2));
+        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
+        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
+        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
+        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
     }
 
     private static void sBoxTest(){
