@@ -2,6 +2,7 @@ import edu.rit.util.Hex;
 import edu.rit.util.Packing;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 public class Serpent implements BlockCipher {
 
@@ -141,7 +142,38 @@ public class Serpent implements BlockCipher {
         }
         return output;
     }
-
+    
+    /**
+     * Performs linear transformation on the input bit sequence
+     * 
+     * @param data Input bit sequence
+     * @return output bit sequence
+     */
+    private byte[] linearTransform(byte[] data){
+    	byte[] output = new byte[blockSize()];
+    	ByteBuffer buffer = ByteBuffer.wrap(data);
+    	int x0 =  buffer.getInt();
+    	int x1 =  buffer.getInt();
+    	int x2 =  buffer.getInt();
+    	int x3 =  buffer.getInt();
+    	//shift left 13 times
+    	x0 = (x0 << 13) | (x0 >>> (19));			//wrote these out so you knew what I was doing
+    	x2 = (x2 << 3) | (x2 >>> (32 - 3));
+    	x1 = x1 ^ x0 ^ x2;
+    	x3 = x3 ^ x2 ^ ((x0 << 3) | (x0 >>> (32 - 3)));
+    	x1 = (x1 << 1) | (x1 >>> (32 - 1));
+    	x3 = (x3 << 1) | (x3 >>> (32 - 7));
+    	x0 = x0 ^ x1 ^ x3;
+    	x2 = x2 ^ x3 ^ ((x1 << 7) | (x1 >>> (32 - 7)));
+    	x0 = (x0 << 5) | (x0 >>> (32-5));
+    	x2 = (x2 << 22) | (x2 >>> (32-22));
+    	buffer.putInt(x0);			//I'm not sure on the order here, could be backwards?
+    	buffer.putInt(x1);
+    	buffer.putInt(x2);
+    	buffer.putInt(x3);
+    	output = buffer.array();
+    	return output;
+    }
     private byte[] getRoundKey(int round) {
         byte[] k0 = new byte[8];
         Packing.unpackLongLittleEndian( prekeys,4*round,k0,0,1 );
@@ -152,8 +184,26 @@ public class Serpent implements BlockCipher {
         byte[] k3 = new byte[8];
         Packing.unpackLongLittleEndian( prekeys,4*round+3,k3,0,1 );
 
-        byte[] k = new byte[]{k0[0],k0[1],k0[2],k0[3],k1[0],k1[1],k1[2],k1[3],
-            k2[0],k2[1],k2[2],k2[3],k3[0],k3[1],k3[2],k3[3]};
+        byte[] k = new byte[16];
+        k[0] = k0[0];				//changed declaration to make compiler happy
+        k[1] = k0[1];
+        k[2] = k0[2];
+        k[3] = k0[3];
+        k[4] = k1[0];
+        k[5] = k1[1];
+        k[6] = k1[2];
+        k[7] = k1[3];
+        k[8] = k2[0];
+        k[9] = k2[1];
+        k[10] = k2[2];
+        k[11] = k2[3];
+        k[12] = k3[0];
+        k[13] = k3[1];
+        k[14] = k3[2];
+        k[15] = k3[3];
+        //previuos declaration
+       // {k0[0],k0[1],k0[2],k0[3],k1[0],k1[1],k1[2],k1[3],
+       //     k2[0],k2[1],k2[2],k2[3],k3[0],k3[1],k3[2],k3[3]};
         return sBox(k,(3-round)%8);
     }
 
@@ -223,3 +273,5 @@ public class Serpent implements BlockCipher {
         System.out.println( Hex.toString(serpent.sBox(test3,0)) );
     }
 }//Serpent.java
+
+
