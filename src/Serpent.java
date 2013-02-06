@@ -214,6 +214,7 @@ public class Serpent implements BlockCipher {
     private byte[] linearTransform(byte[] data){
     	byte[] output = new byte[blockSize()];
     	ByteBuffer buffer = ByteBuffer.wrap(data);
+    	//buffer.order(ByteOrder.LITTLE_ENDIAN);
     	int x0 =  buffer.getInt();
     	int x1 =  buffer.getInt();
     	int x2 =  buffer.getInt();
@@ -228,7 +229,7 @@ public class Serpent implements BlockCipher {
     	x1 = x1 ^ x0 ^ x2;
     	x3 = x3 ^ x2 ^ (x0 << 3);
     	x1 = (x1 << 1) | (x1 >>> (32 - 1));
-    	x3 = (x3 << 1) | (x3 >>> (32 - 7));
+    	x3 = (x3 << 7) | (x3 >>> (32 - 7));
     	x0 = x0 ^ x1 ^ x3;
     	x2 = x2 ^ x3 ^ (x1 << 7);
     	x0 = (x0 << 5) | (x0 >>> (32-5));
