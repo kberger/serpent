@@ -328,6 +328,7 @@ public class Serpent implements BlockCipher {
         }
         //sBoxTest();
         //setKeyTest();
+        IPTest();
     }
 
     private static void setKeyTest() {
@@ -389,6 +390,18 @@ public class Serpent implements BlockCipher {
         System.out.println( Hex.toString(serpent.sBox(test2,0)) );
         System.out.println( Hex.toString(test3) );
         System.out.println( Hex.toString(serpent.sBox(test3,0)) );
+    }
+
+    private static void IPTest() {
+        Serpent tSerp = new Serpent();
+        byte[] test = new byte[]{
+            0x00,0x01,0x02,0x03,
+            0x04,0x05,0x06,0x07,
+            0x08,0x09,0x0a,0x0b,
+            0x0c,0x0d,0x0e,0x0f
+        };
+        System.out.println("IP Test1: "+Hex.toString(test));
+        System.out.println("Out Test1: "+Hex.toString(tSerp.initPermutation(test)));
     }
 }//Serpent.java
 
