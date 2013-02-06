@@ -8,7 +8,8 @@ import java.io.*;
 
 public class Serpent implements BlockCipher {
 
-    private int keySize;
+    private static final byte xFF = (byte)0xFF;
+	private int keySize;
     private byte[] key;
     private int[] prekeys;
 
@@ -62,7 +63,7 @@ public class Serpent implements BlockCipher {
         //prekey initialization from K
         for(int i = 0; i < 8; i++) {
             prekeys[i] = Packing.packIntBigEndian(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3]}, 0);
-            System.out.println("Prekey " + i + ": " + prekeys[i]);
+      //      System.out.println("Prekey " + i + ": " + prekeys[i]);
         }
         //Build out prekey array
         for( int i = 8; i < prekeys.length; i++ ) {
@@ -83,10 +84,170 @@ public class Serpent implements BlockCipher {
             prekeys[i] = (tmp << 11) | (tmp >>> (21));
             prnt = new byte[4];
             Packing.unpackIntBigEndian(prekeys[i], prnt, 0);
-            System.out.println("Prekey " + i + ": " + Hex.toString(prnt));
+          //  System.out.println("Prekey " + i + ": " + Hex.toString(prnt));
         }
     }
 
+    private static byte[][] LTtable = new byte[][] {
+        {16,  52,  56,  70,  83,  94, 105, xFF},
+        {72, 114, 125, xFF, xFF, xFF, xFF, xFF},
+        { 2,   9,  15,  30,  76,  84, 126, xFF},
+        {36,  90, 103, xFF, xFF, xFF, xFF, xFF},
+        {20,  56,  60,  74,  87,  98, 109, xFF},
+        { 1,  76, 118, xFF, xFF, xFF, xFF, xFF},
+        { 2,   6,  13,  19,  34,  80,  88, xFF},
+        {40,  94, 107, xFF, xFF, xFF, xFF, xFF},
+        {24,  60,  64,  78,  91, 102, 113, xFF},
+        { 5,  80, 122, xFF, xFF, xFF, xFF, xFF},
+        { 6,  10,  17,  23,  38,  84,  92, xFF},
+        {44,  98, 111, xFF, xFF, xFF, xFF, xFF},
+        {28,  64,  68,  82,  95, 106, 117, xFF},
+        { 9,  84, 126, xFF, xFF, xFF, xFF, xFF},
+        {10,  14,  21,  27,  42,  88,  96, xFF},
+        {48, 102, 115, xFF, xFF, xFF, xFF, xFF},
+        {32,  68,  72,  86,  99, 110, 121, xFF},
+        { 2,  13,  88, xFF, xFF, xFF, xFF, xFF},
+        {14,  18,  25,  31,  46,  92, 100, xFF},
+        {52, 106, 119, xFF, xFF, xFF, xFF, xFF},
+        {36,  72,  76,  90, 103, 114, 125, xFF},
+        { 6,  17,  92, xFF, xFF, xFF, xFF, xFF},
+        {18,  22,  29,  35,  50,  96, 104, xFF},
+        {56, 110, 123, xFF, xFF, xFF, xFF, xFF},
+        { 1,  40,  76,  80,  94, 107, 118, xFF},
+        {10,  21,  96, xFF, xFF, xFF, xFF, xFF},
+        {22,  26,  33,  39,  54, 100, 108, xFF},
+        {60, 114, 127, xFF, xFF, xFF, xFF, xFF},
+        { 5,  44,  80,  84,  98, 111, 122, xFF},
+        {14,  25, 100, xFF, xFF, xFF, xFF, xFF},
+        {26,  30,  37,  43,  58, 104, 112, xFF},
+        { 3, 118, xFF, xFF, xFF, xFF, xFF, xFF},
+        { 9,  48,  84,  88, 102, 115, 126, xFF},
+        {18,  29, 104, xFF, xFF, xFF, xFF, xFF},
+        {30,  34,  41,  47,  62, 108, 116, xFF},
+        { 7, 122, xFF, xFF, xFF, xFF, xFF, xFF},
+        { 2,  13,  52,  88,  92, 106, 119, xFF},
+        {22,  33, 108, xFF, xFF, xFF, xFF, xFF},
+        {34,  38,  45,  51,  66, 112, 120, xFF},
+        {11, 126, xFF, xFF, xFF, xFF, xFF, xFF},
+        { 6,  17,  56,  92,  96, 110, 123, xFF},
+        {26,  37, 112, xFF, xFF, xFF, xFF, xFF},
+        {38,  42,  49,  55,  70, 116, 124, xFF},
+        { 2,  15,  76, xFF, xFF, xFF, xFF, xFF},
+        {10,  21,  60,  96, 100, 114, 127, xFF},
+        {30,  41, 116, xFF, xFF, xFF, xFF, xFF},
+        { 0,  42,  46,  53,  59,  74, 120, xFF},
+        { 6,  19,  80, xFF, xFF, xFF, xFF, xFF},
+        { 3,  14,  25, 100, 104, 118, xFF, xFF},
+        {34,  45, 120, xFF, xFF, xFF, xFF, xFF},
+        { 4,  46,  50,  57,  63,  78, 124, xFF},
+        {10,  23,  84, xFF, xFF, xFF, xFF, xFF},
+        { 7,  18,  29, 104, 108, 122, xFF, xFF},
+        {38,  49, 124, xFF, xFF, xFF, xFF, xFF},
+        { 0,   8,  50,  54,  61,  67,  82, xFF},
+        {14,  27,  88, xFF, xFF, xFF, xFF, xFF},
+        {11,  22,  33, 108, 112, 126, xFF, xFF},
+        { 0,  42,  53, xFF, xFF, xFF, xFF, xFF},
+        { 4,  12,  54,  58,  65,  71,  86, xFF},
+        {18,  31,  92, xFF, xFF, xFF, xFF, xFF},
+        { 2,  15,  26,  37,  76, 112, 116, xFF},
+        { 4,  46,  57, xFF, xFF, xFF, xFF, xFF},
+        { 8,  16,  58,  62,  69,  75,  90, xFF},
+        {22,  35,  96, xFF, xFF, xFF, xFF, xFF},
+        { 6,  19,  30,  41,  80, 116, 120, xFF},
+        { 8,  50,  61, xFF, xFF, xFF, xFF, xFF},
+        {12,  20,  62,  66,  73,  79,  94, xFF},
+        {26,  39, 100, xFF, xFF, xFF, xFF, xFF},
+        {10,  23,  34,  45,  84, 120, 124, xFF},
+        {12,  54,  65, xFF, xFF, xFF, xFF, xFF},
+        {16,  24,  66,  70,  77,  83,  98, xFF},
+        {30,  43, 104, xFF, xFF, xFF, xFF, xFF},
+        { 0,  14,  27,  38,  49,  88, 124, xFF},
+        {16,  58,  69, xFF, xFF, xFF, xFF, xFF},
+        {20,  28,  70,  74,  81,  87, 102, xFF},
+        {34,  47, 108, xFF, xFF, xFF, xFF, xFF},
+        { 0,   4,  18,  31,  42,  53,  92, xFF},
+        {20,  62,  73, xFF, xFF, xFF, xFF, xFF},
+        {24,  32,  74,  78,  85,  91, 106, xFF},
+        {38,  51, 112, xFF, xFF, xFF, xFF, xFF},
+        { 4,   8,  22,  35,  46,  57,  96, xFF},
+        {24,  66,  77, xFF, xFF, xFF, xFF, xFF},
+        {28,  36,  78,  82,  89,  95, 110, xFF},
+        {42,  55, 116, xFF, xFF, xFF, xFF, xFF},
+        { 8,  12,  26,  39,  50,  61, 100, xFF},
+        {28,  70,  81, xFF, xFF, xFF, xFF, xFF},
+        {32,  40,  82,  86,  93,  99, 114, xFF},
+        {46,  59, 120, xFF, xFF, xFF, xFF, xFF},
+        {12,  16,  30,  43,  54,  65, 104, xFF},
+        {32,  74,  85, xFF, xFF, xFF, xFF, xFF},
+        {36,  90, 103, 118, xFF, xFF, xFF, xFF},
+        {50,  63, 124, xFF, xFF, xFF, xFF, xFF},
+        {16,  20,  34,  47,  58,  69, 108, xFF},
+        {36,  78,  89, xFF, xFF, xFF, xFF, xFF},
+        {40,  94, 107, 122, xFF, xFF, xFF, xFF},
+        { 0,  54,  67, xFF, xFF, xFF, xFF, xFF},
+        {20,  24,  38,  51,  62,  73, 112, xFF},
+        {40,  82,  93, xFF, xFF, xFF, xFF, xFF},
+        {44,  98, 111, 126, xFF, xFF, xFF, xFF},
+        { 4,  58,  71, xFF, xFF, xFF, xFF, xFF},
+        {24,  28,  42,  55,  66,  77, 116, xFF},
+        {44,  86,  97, xFF, xFF, xFF, xFF, xFF},
+        { 2,  48, 102, 115, xFF, xFF, xFF, xFF},
+        { 8,  62,  75, xFF, xFF, xFF, xFF, xFF},
+        {28,  32,  46,  59,  70,  81, 120, xFF},
+        {48,  90, 101, xFF, xFF, xFF, xFF, xFF},
+        { 6,  52, 106, 119, xFF, xFF, xFF, xFF},
+        {12,  66,  79, xFF, xFF, xFF, xFF, xFF},
+        {32,  36,  50,  63,  74,  85, 124, xFF},
+        {52,  94, 105, xFF, xFF, xFF, xFF, xFF},
+        {10,  56, 110, 123, xFF, xFF, xFF, xFF},
+        {16,  70,  83, xFF, xFF, xFF, xFF, xFF},
+        { 0,  36,  40,  54,  67,  78,  89, xFF},
+        {56,  98, 109, xFF, xFF, xFF, xFF, xFF},
+        {14,  60, 114, 127, xFF, xFF, xFF, xFF},
+        {20,  74,  87, xFF, xFF, xFF, xFF, xFF},
+        { 4,  40,  44,  58,  71,  82,  93, xFF},
+        {60, 102, 113, xFF, xFF, xFF, xFF, xFF},
+        { 3,  18,  72, 114, 118, 125, xFF, xFF},
+        {24,  78,  91, xFF, xFF, xFF, xFF, xFF},
+        { 8,  44,  48,  62,  75,  86,  97, xFF},
+        {64, 106, 117, xFF, xFF, xFF, xFF, xFF},
+        { 1,   7,  22,  76, 118, 122, xFF, xFF},
+        {28,  82,  95, xFF, xFF, xFF, xFF, xFF},
+        {12,  48,  52,  66,  79,  90, 101, xFF},
+        {68, 110, 121, xFF, xFF, xFF, xFF, xFF},
+        { 5,  11,  26,  80, 122, 126, xFF, xFF},
+        {32,  86,  99, xFF, xFF, xFF, xFF, xFF}
+    };
+    private static byte[] LT (byte[] data) { 
+    	byte[] output = new byte[16];
+    	ByteBuffer buffer = ByteBuffer.wrap(data);
+    	//buffer.order(ByteOrder.LITTLE_ENDIAN);
+    	int[] x = {buffer.getInt(),buffer.getInt(),buffer.getInt(),buffer.getInt()};
+
+    	int j, b;
+        int[] result = new int[4];
+        for (int i = 0; i < 128; i++) {
+            b = 0;
+            j = 0;
+            while (LTtable[i][j] != xFF) {
+                b ^= (x[(LTtable[i][j] & 0x7F) / 32] >>> ((LTtable[i][j] & 0x7F) % 32)) & 0x01;
+                j++;
+            }
+            if ((b & 0x01) == 1)
+                result[i / 32] |= 1 << (i % 32); // set it
+            else
+                result[i / 32] &= ~(1 << (i % 32)); // clear it
+        }
+        
+    	buffer.clear();
+    	buffer.putInt(result[0]);			//I'm not sure on the order here, could be backwards?
+    	buffer.putInt(result[1]);
+    	buffer.putInt(result[2]);
+    	buffer.putInt(result[3]);
+    	output = buffer.array();
+    	return output;
+    }
+    
     /**
      * Encrypt the given plaintext. <TT>text</TT> must be an array of bytes
      * whose length is equal to <TT>blockSize()</TT>. On input, <TT>text</TT>
@@ -102,22 +263,28 @@ public class Serpent implements BlockCipher {
         //32 rounds
         for(int i = 0; i < 32; i++){
             roundKey = getRoundKey(i);
-            System.out.println(Hex.toString(roundKey));
+            //System.out.println(Hex.toString(roundKey));
             for(int n = 0; n < 16; n++){
                 text[n] = (byte) (text[n] ^ roundKey[n]);
             }
+            System.out.println(i+"XOR: "+Hex.toString(text));
             text = sBox(text, i);
-
-            text = linearTransform(text);
-            //System.out.println(Hex.toString(text));
-        }
-        roundKey = getRoundKey(32);
-        for(int n = 0; n < 16; n++){
-            text[n] = (byte) (text[n] ^ roundKey[n]);
+            System.out.println(i+"S: "+Hex.toString(text));
+            if(i == 31){
+            	roundKey = getRoundKey(32);
+                for(int n = 0; n < 16; n++){
+                    text[n] = (byte) (text[n] ^ roundKey[n]);
+                }
+                System.out.println("32XOR: "+Hex.toString(text));
+            }
+            else{
+            	text = LT(text);
+            	System.out.println(i+"LT: "+Hex.toString(text));
+            }
         }
         
         text = finalPermutation(text);    
-       
+        System.out.println(Hex.toString(text));
     }
     
     private byte[] initPermutation(byte[] data) {
@@ -125,9 +292,9 @@ public class Serpent implements BlockCipher {
         for (int i = 0;  i < 128; i++) {
             int bit = (data[(ipTable[i]) / 8] >>> ((ipTable[i]) % 8)) & 0x01;
             if ((bit & 0x01) == 1)
-                output[i / 8] |= 1 << (i % 8);
+                output[15- (i/8)] |= 1 << (i % 8);
             else
-                output[i / 8] &= ~(1 << (i % 8));
+                output[15 - (i/8)] &= ~(1 << (i % 8));
         }
         return output; 
     }
@@ -135,13 +302,19 @@ public class Serpent implements BlockCipher {
     private byte[] finalPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
-            int bit = (data[(fpTable[i] & 0x7F) / 8] >>> ((fpTable[i] & 0x7F) % 8)) & 0x01;
+            int bit = (data[15-fpTable[i] / 8] >>> (fpTable[i] % 8)) & 0x01;
             if ((bit & 0x01) == 1)
-                output[i / 8] |= 1 << (i % 8);
+                output[(i/8)] |= 1 << (i % 8);
             else
-                output[i / 8] &= ~(1 << (i % 8));
+                output[(i/8)] &= ~(1 << (i % 8));
         }
-        return output; 
+        byte[] result = new byte[] {
+                output[3], output[2], output[1], output[0],
+                output[7], output[6], output[5], output[4],
+                output[11], output[10], output[9], output[8],
+                output[15], output[14], output[13], output[12],
+            };
+    	return result; 
     }
 
     private static byte[] s0 = new byte[]
@@ -213,21 +386,30 @@ public class Serpent implements BlockCipher {
     private byte[] linearTransform(byte[] data){
     	byte[] output = new byte[blockSize()];
     	ByteBuffer buffer = ByteBuffer.wrap(data);
+    	//buffer.order(ByteOrder.LITTLE_ENDIAN);
     	int x0 =  buffer.getInt();
     	int x1 =  buffer.getInt();
     	int x2 =  buffer.getInt();
     	int x3 =  buffer.getInt();
+//    	System.out.print(Hex.toString(x0)+" ");
+//    	System.out.print(Hex.toString(x1)+" ");
+//    	System.out.print(Hex.toString(x2)+" ");
+//    	System.out.println(Hex.toString(x3)+" ");
     	//shift left 13 times
-    	x0 = (x0 << 13) | (x0 >>> (19));			//wrote these out so you knew what I was doing
+    	x0 = (x0 << 13) | (x0 >>> (32 - 13));			//wrote these out so you knew what I was doing
     	x2 = (x2 << 3) | (x2 >>> (32 - 3));
     	x1 = x1 ^ x0 ^ x2;
-    	x3 = x3 ^ x2 ^ ((x0 << 3) | (x0 >>> (32 - 3)));
+    	x3 = x3 ^ x2 ^ (x0 << 3);
     	x1 = (x1 << 1) | (x1 >>> (32 - 1));
-    	x3 = (x3 << 1) | (x3 >>> (32 - 7));
+    	x3 = (x3 << 7) | (x3 >>> (32 - 7));
     	x0 = x0 ^ x1 ^ x3;
-    	x2 = x2 ^ x3 ^ ((x1 << 7) | (x1 >>> (32 - 7)));
+    	x2 = x2 ^ x3 ^ (x1 << 7);
     	x0 = (x0 << 5) | (x0 >>> (32-5));
     	x2 = (x2 << 22) | (x2 >>> (32-22));
+//    	System.out.print(Hex.toString(x0)+" ");
+//    	System.out.print(Hex.toString(x1)+" ");
+//    	System.out.print(Hex.toString(x2)+" ");
+//    	System.out.println(Hex.toString(x3)+" ");
     	buffer.clear();
     	buffer.putInt(x0);			//I'm not sure on the order here, could be backwards?
     	buffer.putInt(x1);
@@ -253,16 +435,25 @@ public class Serpent implements BlockCipher {
             ((k2 >>> j+1) & 0x01) << 6 |
             ((k3 >>> j+1) & 0x01) << 7 );
         }
-        System.out.println("in"+round+": "+Hex.toString(in));
         byte[] out = sBox(in, box);
         byte[] key = new byte[16];
-        for (int j = 0; j < 16; j++) {
-        	key[j/4] |= (out[j] & 0x01) << (j%4) | ((out[j] >>> 4) & 0x01) << ((j%4)+1) ;
-            key[4+j/4] |= ((out[j] >>> 1) & 0x01) << (j%4) | ((out[j] >>> 5) & 0x01) << ((j%4)+1) ;
-            key[8+j/4] |= ((out[j] >>> 2) & 0x01) << (j%4) | ((out[j] >>> 6) & 0x01) << ((j%4)+1) ;
-            key[12+j/4] |= ((out[j] >>> 3) & 0x01) << (j%4) | ((out[j] >>> 7) & 0x01) << ((j%4)+1) ;
+//        for (int i = 3; i >= 0; i--) {
+//            for(int j = 0; j < 4; j++) {
+//                key[i] |= (out[i*4+j] & 0x01) << (j*2) | ((out[i*4+j] >>> 4) & 0x01) << (j*2+1) ;
+//                key[4+i] |= ((out[i*4+j] >>> 1) & 0x01) << (j*2) | ((out[i*4+j] >>> 5) & 0x01) << (j*2+1) ;
+//                key[8+i] |= ((out[i*4+j] >>> 2) & 0x01) << (j*2) | ((out[i*4+j] >>> 6) & 0x01) << (j*2+1) ;
+//                key[12+i] |= ((out[i*4+j] >>> 3) & 0x01) << (j*2) | ((out[i*4+j] >>> 7) & 0x01) << (j*2+1) ;
+//            }
+//        }
+        for (int i = 3; i >= 0; i--) {
+            for(int j = 0; j < 4; j++) {
+                key[3-i] |= (out[i*4+j] & 0x01) << (j*2) | ((out[i*4+j] >>> 4) & 0x01) << (j*2+1) ;
+                key[7-i] |= ((out[i*4+j] >>> 1) & 0x01) << (j*2) | ((out[i*4+j] >>> 5) & 0x01) << (j*2+1) ;
+                key[11-i] |= ((out[i*4+j] >>> 2) & 0x01) << (j*2) | ((out[i*4+j] >>> 6) & 0x01) << (j*2+1) ;
+                key[15-i] |= ((out[i*4+j] >>> 3) & 0x01) << (j*2) | ((out[i*4+j] >>> 7) & 0x01) << (j*2+1) ;
+            }
         }
-        return key;
+        return initPermutation(key);
     }
 
     /**
@@ -277,8 +468,8 @@ public class Serpent implements BlockCipher {
         if(args.length == 1)
         {
        	 	byte[] test_in = new byte[] {
-       			0x0a,0x0f,(byte) 0xc1,0x01,0x51,0x01,0x01,0x01,
-                (byte) 0x88,0x00,0x32,0x00,(byte) 0xd0,0x00,0x78,0x00,
+       	 		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
              };
             byte[] test_key = new byte[] {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -331,7 +522,7 @@ public class Serpent implements BlockCipher {
         }
         //sBoxTest();
         //setKeyTest();
-        IPTest();
+        //IPTest();
     }
 
     private static void setKeyTest() {
