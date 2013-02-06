@@ -4,16 +4,16 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.lang.Integer;
-import java.io.*
+import java.io.*;
 
 public class Serpent implements BlockCipher {
 
     private int keySize;
     private byte[] key;
-    private long[] prekeys;
+    private int[] prekeys;
 
     public Serpent() {
-        prekeys = new long[140];
+        prekeys = new int[140];
     }
 
     /**
@@ -61,28 +61,30 @@ public class Serpent implements BlockCipher {
 
         //prekey initialization from K
         for(int i = 0; i < 8; i++) {
-            prekeys[i] = Packing.packLongLittleEndian(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3],
-                0x00, 0x00, 0x00, 0x00}, 0);
-            //System.out.println("Prekey " + i + ": " + Hex.toString(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3],
-            //    0x00, 0x00, 0x00, 0x00}));
+            prekeys[i] = Packing.packIntBigEndian(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3]}, 0);
+            System.out.println("Prekey " + i + ": " + prekeys[i]);
         }
         //Build out prekey array
         for( int i = 8; i < prekeys.length; i++ ) {
-            ByteBuffer help = ByteBuffer.allocate(Integer.SIZE);
-            help.putLong((long)i);
-            help.order(ByteOrder.LITTLE_ENDIAN);
-            long valI = help.getLong();
-            help.order(ByteOrder.BIG_ENDIAN);
-            help.putLong((long)0x9e3779b9);
-            help.order(ByteOrder.LITTLE_ENDIAN);
-            long phi = help.getLong();
-            //(x << n) | (x >>> (32 - n)) Rotate
-            prekeys[i] = prekeys[i-8] ^ prekeys[i-5] ^ prekeys[i-3] ^ prekeys[i-1] ^ 
-                valI ^ phi;
-            prekeys[i] = (prekeys[i] << 11) | (prekeys[i] >>> (21));
-            //System.out.println("Prekey " + i + ": " + prekeys[i]);
-        }
+//            ByteBuffer help = ByteBuffer.allocate(Integer.SIZE);
+//            help.order(ByteOrder.LITTLE_ENDIAN);
+//            help.putInt(i-8);
+//            int valI = help.getInt(0);
+            byte[] prnt = new byte[4];
+//            Packing.unpackIntBigEndian(valI, prnt, 0);
+//            System.out.println("Int " + i + ": " + Hex.toString(prnt));
 
+            //int phi = 0xb979379e;
+            int phi = 0x9e3779b9;
+            //(x << n) | (x >>> (32 - n)) Rotate
+            int tmp;
+            tmp = prekeys[i-8] ^ prekeys[i-5] ^ prekeys[i-3] ^ prekeys[i-1] ^ 
+                i-8 ^ phi;
+            prekeys[i] = (tmp << 11) | (tmp >>> (21));
+            prnt = new byte[4];
+            Packing.unpackIntBigEndian(prekeys[i], prnt, 0);
+            System.out.println("Prekey " + i + ": " + Hex.toString(prnt));
+        }
     }
 
     /**
@@ -100,41 +102,44 @@ public class Serpent implements BlockCipher {
         //32 rounds
         for(int i = 0; i < 32; i++){
             roundKey = getRoundKey(i);
+            System.out.println(Hex.toString(roundKey));
             for(int n = 0; n < 16; n++){
-                text[n] = text[n] ^ roundKey[n];
+                text[n] = (byte) (text[n] ^ roundKey[n]);
             }
             text = sBox(text, i);
+
             text = linearTransform(text);
+            //System.out.println(Hex.toString(text));
         }
         roundKey = getRoundKey(32);
         for(int n = 0; n < 16; n++){
-            text[n] = text[n] ^ roundKey[n];
+            text[n] = (byte) (text[n] ^ roundKey[n]);
         }
-        text = finalPermutation(text);
+        
+        text = finalPermutation(text);    
+       
     }
-
-
+    
     private byte[] initPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
-            int bit = (input[(ipTable[i] & 0x7F) / 8] >>> ((ipTable[i] & 0x7F) % 8)) & 0x01;
+            int bit = (data[(ipTable[i]) / 8] >>> ((ipTable[i]) % 8)) & 0x01;
             if ((bit & 0x01) == 1)
-                output[i / 8] |= 1 << (i % 32);
+                output[i / 8] |= 1 << (i % 8);
             else
-                output[i / 8] &= ~(1 << (i % 32));
+                output[i / 8] &= ~(1 << (i % 8));
         }
         return output; 
-        
     }
 
     private byte[] finalPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
-            int bit = (input[(fpTable[i] & 0x7F) / 8] >>> ((fpTable[i] & 0x7F) % 8)) & 0x01;
+            int bit = (data[(fpTable[i] & 0x7F) / 8] >>> ((fpTable[i] & 0x7F) % 8)) & 0x01;
             if ((bit & 0x01) == 1)
-                output[i / 8] |= 1 << (i % 32);
+                output[i / 8] |= 1 << (i % 8);
             else
-                output[i / 8] &= ~(1 << (i % 32));
+                output[i / 8] &= ~(1 << (i % 8));
         }
         return output; 
     }
@@ -194,7 +199,7 @@ public class Serpent implements BlockCipher {
             int curr = data[i]&0xFF;
             byte low4 = (byte)(curr>>>4);
             byte high4 = (byte)(curr&0x0F);
-            output[i] = (toUse[low4]<<4) ^ (toUse[high4]);
+            output[i] = (byte) ((toUse[low4]<<4) ^ (toUse[high4]));
         }
         return output;
     }
@@ -223,6 +228,7 @@ public class Serpent implements BlockCipher {
     	x2 = x2 ^ x3 ^ ((x1 << 7) | (x1 >>> (32 - 7)));
     	x0 = (x0 << 5) | (x0 >>> (32-5));
     	x2 = (x2 << 22) | (x2 >>> (32-22));
+    	buffer.clear();
     	buffer.putInt(x0);			//I'm not sure on the order here, could be backwards?
     	buffer.putInt(x1);
     	buffer.putInt(x2);
@@ -231,36 +237,29 @@ public class Serpent implements BlockCipher {
     	return output;
     }
     private byte[] getRoundKey(int round) {
-        byte[] k0 = new byte[8];
-        Packing.unpackLongLittleEndian( prekeys,4*round,k0,0,1 );
-        byte[] k1 = new byte[8];
-        Packing.unpackLongLittleEndian( prekeys,4*round+1,k1,0,1 );
-        byte[] k2 = new byte[8];
-        Packing.unpackLongLittleEndian( prekeys,4*round+2,k2,0,1 );
-        byte[] k3 = new byte[8];
-        Packing.unpackLongLittleEndian( prekeys,4*round+3,k3,0,1 );
-
-        byte[] k = new byte[16];
-        k[0] = k0[0];				//changed declaration to make compiler happy
-        k[1] = k0[1];
-        k[2] = k0[2];
-        k[3] = k0[3];
-        k[4] = k1[0];
-        k[5] = k1[1];
-        k[6] = k1[2];
-        k[7] = k1[3];
-        k[8] = k2[0];
-        k[9] = k2[1];
-        k[10] = k2[2];
-        k[11] = k2[3];
-        k[12] = k3[0];
-        k[13] = k3[1];
-        k[14] = k3[2];
-        k[15] = k3[3];
-        //previuos declaration
-       // {k0[0],k0[1],k0[2],k0[3],k1[0],k1[1],k1[2],k1[3],
-       //     k2[0],k2[1],k2[2],k2[3],k3[0],k3[1],k3[2],k3[3]};
-        return sBox(k,(3-round)%8);
+        int k0 = prekeys[4*round+8];
+        int k1 = prekeys[4*round+9];
+        int k2 = prekeys[4*round+10];
+        int k3 = prekeys[4*round+11];
+        int box = (((3-round)%8)+8)%8;
+        byte[] in = new byte[16];
+        for (int j = 0; j < 32; j+=2) {
+            in[j/2] = (byte) (((k0 >>> j) & 0x01)     |
+            ((k1 >>> j) & 0x01) << 1 |
+            ((k2 >>> j) & 0x01) << 2 |
+            ((k3 >>> j) & 0x01) << 3 |
+            ((k0 >>> j+1) & 0x01) << 4 |
+            ((k1 >>> j+1) & 0x01) << 5 |
+            ((k2 >>> j+1) & 0x01) << 6 |
+            ((k3 >>> j+1) & 0x01) << 7 );
+        }
+        System.out.println("in"+round+": "+Hex.toString(in));
+        byte[] out = sBox(in, box);
+        byte[] key = new byte[16];
+        for (int j = 0; j < 16; j++) {
+        	
+        }
+        return key;
     }
 
     /**
@@ -274,10 +273,10 @@ public class Serpent implements BlockCipher {
         Serpent serpent = new Serpent();
         if(args.length == 1)
         {
-            byte[] test_in = new byte[] {
-                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-            };
+       	 	byte[] test_in = new byte[] {
+       			0x0a,0x0f,(byte) 0xc1,0x01,0x51,0x01,0x01,0x01,
+                (byte) 0x88,0x00,0x32,0x00,(byte) 0xd0,0x00,0x78,0x00,
+             };
             byte[] test_key = new byte[] {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -289,11 +288,14 @@ public class Serpent implements BlockCipher {
                 serpent.setKey(test_key);
                 serpent.encrypt(test_in);
             }
+           // System.out.println(Hex.toString(test_in));
+            
         }
         else if (args.length == 4) {
             //read file
+        	try{
             File file_in = new File(args[0]);
-            byte [] fileData = new byte[(int)file.length()];
+            byte [] fileData = new byte[(int)file_in.length()];
             DataInputStream in_stream = new DataInputStream((new FileInputStream(file_in)));
             in_stream.readFully(fileData);
             in_stream.close();
@@ -305,20 +307,24 @@ public class Serpent implements BlockCipher {
             File file_out = new File(args[1]);
             DataOutputStream out_stream = new DataOutputStream((new FileOutputStream(file_out)));
             //encrypt
-            byte[] iv = getRoundKey(Integer.parseInt(args[3]));
+            byte[] iv = serpent.getRoundKey(Integer.parseInt(args[3]));
             for(int i = 0; i < fileData.length; i+=16){
-                byte[] block = new byte[16] {
+                byte[] block = new byte[] {
                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
                 };
                 for(int n = 0; n < 16 && n < fileData.length; n++){
-                    block[n] = fileData[i+n] ^ iv[n];
+                    block[n] = (byte) (fileData[i+n] ^ iv[n]);
                 }
                 serpent.encrypt(block);
                 iv = block;
                 out_stream.write(block, 0, block.length);
             }
             out_stream.close();
+        	}
+        	catch(IOException e){
+        		System.err.println(e.getMessage());
+        	}
         }
         //sBoxTest();
         //setKeyTest();
