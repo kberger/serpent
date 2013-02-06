@@ -218,17 +218,25 @@ public class Serpent implements BlockCipher {
     	int x1 =  buffer.getInt();
     	int x2 =  buffer.getInt();
     	int x3 =  buffer.getInt();
+//    	System.out.print(Hex.toString(x0)+" ");
+//    	System.out.print(Hex.toString(x1)+" ");
+//    	System.out.print(Hex.toString(x2)+" ");
+//    	System.out.println(Hex.toString(x3)+" ");
     	//shift left 13 times
-    	x0 = (x0 << 13) | (x0 >>> (19));			//wrote these out so you knew what I was doing
+    	x0 = (x0 << 13) | (x0 >>> (32 - 13));			//wrote these out so you knew what I was doing
     	x2 = (x2 << 3) | (x2 >>> (32 - 3));
     	x1 = x1 ^ x0 ^ x2;
-    	x3 = x3 ^ x2 ^ ((x0 << 3) | (x0 >>> (32 - 3)));
+    	x3 = x3 ^ x2 ^ (x0 << 3);
     	x1 = (x1 << 1) | (x1 >>> (32 - 1));
     	x3 = (x3 << 1) | (x3 >>> (32 - 7));
     	x0 = x0 ^ x1 ^ x3;
-    	x2 = x2 ^ x3 ^ ((x1 << 7) | (x1 >>> (32 - 7)));
+    	x2 = x2 ^ x3 ^ (x1 << 7);
     	x0 = (x0 << 5) | (x0 >>> (32-5));
     	x2 = (x2 << 22) | (x2 >>> (32-22));
+//    	System.out.print(Hex.toString(x0)+" ");
+//    	System.out.print(Hex.toString(x1)+" ");
+//    	System.out.print(Hex.toString(x2)+" ");
+//    	System.out.println(Hex.toString(x3)+" ");
     	buffer.clear();
     	buffer.putInt(x0);			//I'm not sure on the order here, could be backwards?
     	buffer.putInt(x1);
@@ -341,7 +349,7 @@ public class Serpent implements BlockCipher {
         }
         //sBoxTest();
         //setKeyTest();
-        IPTest();
+        //IPTest();
     }
 
     private static void setKeyTest() {
