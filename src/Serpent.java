@@ -257,7 +257,10 @@ public class Serpent implements BlockCipher {
         byte[] out = sBox(in, box);
         byte[] key = new byte[16];
         for (int j = 0; j < 16; j++) {
-        	
+        	key[j/4] |= (out[j] & 0x01) << (j%4) | ((out[j] >>> 4) & 0x01) << ((j%4)+1) ;
+            key[4+j/4] |= ((out[j] >>> 1) & 0x01) << (j%4) | ((out[j] >>> 5) & 0x01) << ((j%4)+1) ;
+            key[8+j/4] |= ((out[j] >>> 2) & 0x01) << (j%4) | ((out[j] >>> 6) & 0x01) << ((j%4)+1) ;
+            key[12+j/4] |= ((out[j] >>> 3) & 0x01) << (j%4) | ((out[j] >>> 7) & 0x01) << ((j%4)+1) ;
         }
         return key;
     }
