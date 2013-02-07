@@ -279,19 +279,26 @@ public class Serpent implements BlockCipher {
             }
             else{
 
-           	 	byte[] blank = new byte[] {
-               	 		(byte) 0x00,0x00,0x00,0x00,(byte) 0x00,0x00,0x00,0x10,
-                        (byte) 0x00,0x00,0x00,0x00,(byte) 0x00,0x00,0x00,(byte) 0x00,
-                     };
-
-                byte[] BhatiPlus1 = linearTransform(blank);
+//           	 	byte[] blank = new byte[] {
+//               	 		(byte) 0xF0,0x00,0x00,0x00,(byte) 0x00,0x00,0x00,0x00,
+//                        (byte) 0x00,0x00,0x00,0x00,(byte) 0x00,0x00,0x00,(byte) 0x00,
+//                     };
+//
+//                byte[] BhatiPlus1 = linearTransform(blank);
             	
-            	//text = linearTransform(text);
+            	text = linearTransform(text);
             	System.out.println(i+"LT: "+Hex.toString(text));
             }
         }
         
-        text = finalPermutation(text);    
+        text = finalPermutation(text);   
+      byte[] temp = new byte[] {
+    		  text[3], text[2], text[1], text[0],
+    		  text[7], text[6], text[5], text[4],
+    		  text[11], text[10], text[9], text[8],
+    		  text[15], text[14], text[13], text[12],
+      };
+      text = temp;
         System.out.println(Hex.toString(text));
     }
     
@@ -316,13 +323,13 @@ public class Serpent implements BlockCipher {
             else
                 output[(i/8)] &= ~(1 << (i % 8));
         }
-        byte[] result = new byte[] {
-                output[3], output[2], output[1], output[0],
-                output[7], output[6], output[5], output[4],
-                output[11], output[10], output[9], output[8],
-                output[15], output[14], output[13], output[12],
-            };
-    	return result; 
+//        byte[] result = new byte[] {
+//                output[3], output[2], output[1], output[0],
+//                output[7], output[6], output[5], output[4],
+//                output[11], output[10], output[9], output[8],
+//                output[15], output[14], output[13], output[12],
+//            };
+    	return output; 
     }
 
     private static byte[] s0 = new byte[]
@@ -392,6 +399,7 @@ public class Serpent implements BlockCipher {
      * @return output bit sequence
      */
     private byte[] linearTransform(byte[] data){
+    	data = finalPermutation(data);
     	byte[] output = new byte[blockSize()];
     	ByteBuffer buffer = ByteBuffer.wrap(data);
     	//buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -424,6 +432,7 @@ public class Serpent implements BlockCipher {
     	
     	output = buffer.array();
     	output = initPermutation(output);
+    	
     	System.out.println("after:"+Hex.toString(output)+" ");
     	return output;
     }
