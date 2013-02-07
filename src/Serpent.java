@@ -240,7 +240,7 @@ public class Serpent implements BlockCipher {
         }
         
     	buffer.clear();
-    	buffer.putInt(result[0]);			//I'm not sure on the order here, could be backwards?
+    	buffer.putInt(result[0]);
     	buffer.putInt(result[1]);
     	buffer.putInt(result[2]);
     	buffer.putInt(result[3]);
@@ -278,7 +278,15 @@ public class Serpent implements BlockCipher {
                 System.out.println("32XOR: "+Hex.toString(text));
             }
             else{
-            	text = LT(text);
+
+           	 	byte[] blank = new byte[] {
+               	 		(byte) 0x00,0x00,0x00,0x00,(byte) 0x00,0x00,0x00,0x10,
+                        (byte) 0x00,0x00,0x00,0x00,(byte) 0x00,0x00,0x00,(byte) 0x00,
+                     };
+
+                byte[] BhatiPlus1 = linearTransform(blank);
+            	
+            	//text = linearTransform(text);
             	System.out.println(i+"LT: "+Hex.toString(text));
             }
         }
@@ -391,13 +399,13 @@ public class Serpent implements BlockCipher {
     	int x1 =  buffer.getInt();
     	int x2 =  buffer.getInt();
     	int x3 =  buffer.getInt();
-//    	System.out.print(Hex.toString(x0)+" ");
-//    	System.out.print(Hex.toString(x1)+" ");
-//    	System.out.print(Hex.toString(x2)+" ");
-//    	System.out.println(Hex.toString(x3)+" ");
-    	//shift left 13 times
-    	x0 = (x0 << 13) | (x0 >>> (32 - 13));			//wrote these out so you knew what I was doing
-    	x2 = (x2 << 3) | (x2 >>> (32 - 3));
+    	
+    	System.out.print("before :"+Hex.toString(x0)+" ");
+    	System.out.print(Hex.toString(x1)+" ");
+    	System.out.print(Hex.toString(x2)+" ");
+    	System.out.println(Hex.toString(x3)+" ");
+    	x0 = ((x0 << 13) | (x0 >>> (32 - 13)));	
+    	x2 = ((x2 << 3) | (x2 >>> (32 - 3)));
     	x1 = x1 ^ x0 ^ x2;
     	x3 = x3 ^ x2 ^ (x0 << 3);
     	x1 = (x1 << 1) | (x1 >>> (32 - 1));
@@ -406,16 +414,17 @@ public class Serpent implements BlockCipher {
     	x2 = x2 ^ x3 ^ (x1 << 7);
     	x0 = (x0 << 5) | (x0 >>> (32-5));
     	x2 = (x2 << 22) | (x2 >>> (32-22));
-//    	System.out.print(Hex.toString(x0)+" ");
-//    	System.out.print(Hex.toString(x1)+" ");
-//    	System.out.print(Hex.toString(x2)+" ");
-//    	System.out.println(Hex.toString(x3)+" ");
+
     	buffer.clear();
-    	buffer.putInt(x0);			//I'm not sure on the order here, could be backwards?
+
+    	buffer.putInt(x0);
     	buffer.putInt(x1);
     	buffer.putInt(x2);
     	buffer.putInt(x3);
+    	
     	output = buffer.array();
+    	output = initPermutation(output);
+    	System.out.println("after:"+Hex.toString(output)+" ");
     	return output;
     }
     private byte[] getRoundKey(int round) {
