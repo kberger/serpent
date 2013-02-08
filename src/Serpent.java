@@ -90,9 +90,14 @@ public class Serpent implements BlockCipher {
      * @param  text  Plaintext (on input), ciphertext (on output).
      */
     public void encrypt(byte[] text) {
-	byte[] data = initPermutation(text);
-	System.out.println("data:" +Hex.toString(data));
-       // text = initPermutation(text);
+		byte[] data = initPermutation(text);
+		byte[] temp = new byte[] {
+				data[12], data[13], data[14], data[15],
+				data[8], data[9], data[10], data[11],
+				data[4], data[5], data[6], data[7],
+				data[0], data[1], data[2], data[3],
+				};
+		data = temp;
         byte[] roundKey = new byte[16];
         //32 rounds
         for(int i = 0; i < 32; i++){
@@ -100,9 +105,6 @@ public class Serpent implements BlockCipher {
             for(int n = 0; n < 16; n++){
                 data[n] = (byte) (data[n] ^ roundKey[n]);
             }
-            
-            System.out.println("key:" +Hex.toString(roundKey));
-            System.out.println("xor:" +Hex.toString(data));
             data = sBox(data, i);
             
             if(i == 31){
@@ -296,8 +298,8 @@ public class Serpent implements BlockCipher {
         if(args.length == 1)
         {
        	 	byte[] test_in = new byte[] {
-       	 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,
+       	 		0x10,0x00,0x00,0x00,0x04,0x00,0x07,0x00,
+                0x00,0x00,0x00,0x50,0x04,0x07,0x00,0x00,
              };
             byte[] test_key = new byte[] {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
