@@ -291,7 +291,7 @@ public class Serpent implements BlockCipher {
      * sets an all-zero-byte key, performs N encryptions of an all-zero-byte plaintext block
      * or 
      * encrypts the contents of the input file, storing the result in an output file
-     * args either specifies N or input file, output file, key, and nonce
+     * args either specifies N or input file, output file, key, nonce, and [e]ncrypt or [d]ecrypt
      */
     public static void main( String[] args ) {
         Serpent serpent = new Serpent();
@@ -315,7 +315,7 @@ public class Serpent implements BlockCipher {
             System.out.println(Hex.toString(test_in));
             
         }
-        else if (args.length == 4) {
+        else if (args.length == 5) {
             //read file
         	try{
             File file_in = new File(args[0]);
@@ -330,8 +330,10 @@ public class Serpent implements BlockCipher {
             //setup file writing
             File file_out = new File(args[1]);
             DataOutputStream out_stream = new DataOutputStream((new FileOutputStream(file_out)));
-            //encrypt
-            byte[] iv = serpent.getRoundKey(Integer.parseInt(args[3]));
+            byte[] iv = new byte[16];
+            Packing.unpackIntLittleEndian(Ingeger.parseInt(args[3]),iv,0);
+            serpent.encrypt(iv);
+            
             for(int i = 0; i < fileData.length-16; i+=16){
                 byte[] block = new byte[] {
                     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
