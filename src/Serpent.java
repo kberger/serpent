@@ -138,7 +138,7 @@ public class Serpent implements BlockCipher {
         text[15] = data[12];
     }
 
-/**
+    /**
      * Encrypt the given plaintext. <TT>text</TT> must be an array of bytes
      * whose length is equal to <TT>blockSize()</TT>. On input, <TT>text</TT>
      * contains the plaintext block. The plaintext block is encrypted using the
@@ -173,22 +173,6 @@ public class Serpent implements BlockCipher {
             //System.out.println("Applying InvLinTrans " + i);
         }
         data = finalPermutation(data);   
-        // text[0] = data[15];
-        // text[1] = data[14];
-        // text[2] = data[13];
-        // text[3] = data[12];
-        // text[4] = data[11];
-        // text[5] = data[10];
-        // text[6] = data[9];
-        // text[7] = data[8];
-        // text[8] = data[7];
-        // text[9] = data[6];
-        // text[10] = data[5];
-        // text[11] = data[4];
-        // text[12] = data[3];
-        // text[13] = data[2];
-        // text[14] = data[1];
-        // text[15] = data[0];
         text[0] = data[3];
         text[1] = data[2];
         text[2] = data[1];
@@ -339,7 +323,6 @@ public class Serpent implements BlockCipher {
         data = finalPermutation(data);
         byte[] output = new byte[blockSize()];
         ByteBuffer buffer = ByteBuffer.wrap(data);
-        //buffer.order(ByteOrder.LITTLE_ENDIAN);
         int x0 =  buffer.getInt();
         int x1 =  buffer.getInt();
         int x2 =  buffer.getInt();
@@ -493,12 +476,12 @@ public class Serpent implements BlockCipher {
             serpent.encrypt(iv);
             //Encryption
             if(args[4].equals("e")) {
-                for(int i = 0; i < fileData.length-16; i+=16){
+                for(int i = 0; i < fileData.length; i+=16){
                     byte[] block = new byte[] {
                         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
                     };
-                    for(int n = 0; n < 16 && n < fileData.length; n++){
+                    for(int n = 0; n < 16 && i+n < fileData.length; n++){
                         block[n] = (byte) (fileData[i+n] ^ iv[n]);
                     }
                     serpent.encrypt(block);
@@ -508,7 +491,7 @@ public class Serpent implements BlockCipher {
                 }
             }
             else if(args[4].equals("d")) {
-                for(int i = 0; i < fileData.length-16; i+=16){
+                for(int i = 0; i < fileData.length; i+=16){
                     byte[] block = new byte[] {
                         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
