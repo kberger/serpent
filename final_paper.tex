@@ -1,0 +1,305 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Simple Sectioned Essay Template
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Note:
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing essay content.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[12pt]{article} % Default font size is 12pt, it can be changed here
+
+\usepackage{geometry} % Required to change the page size to A4
+\geometry{a4paper} % Set the page size to be A4 as opposed to the default US Letter
+
+\usepackage{graphicx} % Required for including pictures
+
+\usepackage{float} % Allows putting an [H] in \begin{figure} to specify the exact location of the figure
+\usepackage{wrapfig} % Allows in-line images such as the example fish picture
+\usepackage{listings}
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+
+\linespread{1.2} % Line spacing
+
+%\setlength\parindent{0pt} % Uncomment to remove all indentation from paragraphs
+
+\graphicspath{{./Pictures/}} % Specifies the directory where pictures are stored
+\newcommand{\tab}{\hspace*{2em}}
+
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+
+\textsc{\LARGE Serpent Cipher}\\[1.5cm] % Name of your university/college
+\textsc{\Large Final Report}\\[0.5cm] % Major heading such as course name
+\textsc{\large Cryptography}\\[0.5cm] % Minor heading such as course title
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Team Rikki-Tikki-Tavi}\\[0.4cm] % Title of your document
+\HRule \\[1.5cm]
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Authors:}\\
+Nicholas \textsc{Sereni} % Your name
+\newline
+Dan \textsc{Grau}
+\newline
+Karl \textsc{Berger}
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Prof.:} \\
+Alan \textsc{Kaminsky} % Supervisor's Name
+\end{flushright}
+\end{minipage}\\[4cm]
+
+{\large \today}\\[3cm] % Date, change the \today to a set date if you want to be precise
+
+%\includegraphics{Logo}\\[1cm] % Include a department/university logo - this will require the graphicx package
+
+\vfill % Fill the rest of the page with whitespace
+
+\end{titlepage}
+
+%----------------------------------------------------------------------------------------
+%	TABLE OF CONTENTS
+%----------------------------------------------------------------------------------------
+
+\tableofcontents % Include a table of contents
+
+\newpage % Begins the essay on a new page instead of on the same page as the table of contents 
+
+%----------------------------------------------------------------------------------------
+%	INTRODUCTION
+%----------------------------------------------------------------------------------------
+
+\section{Serpent Cipher} % Major section
+
+%------------------------------------------------
+
+\subsection{Background} % Sub-section
+The Serpent cipher was designed by Ross Angerson, Eli Biham, and Lars Knudsen. It was created as candidate for the Advanced Encryption Standard. Based on AES requirements, it has a 128 bit block length and a 256 bit key length. It also supports keys sizes of 128 and 192 bits. 
+
+%------------------------------------------------
+
+\subsection{The Algorithm} % Sub-section
+Serpent splits the 128 bit block into four 32-bit words. There are 32 rounds. Each round uses a subkey generated from the user key. The user key does not have a size requirement, but it becomes fixed at 128, 192, or 256 bits. Padding is achieved by appending a ``1" followed by ``0" bits. The algorithm can be summarized as:
+
+\begin{itemize}
+\item An initial permutation
+\item 32 rounds consisting of:
+\begin{itemize}
+\item key mixing operation
+\item S-boxes
+\item linear transformation (replaced by a a key mixing operation in the final round)
+\end{itemize}
+\item A final permutation
+
+This process is explained visually in Figure~\ref{fig:Block Diagram of Encryption}.
+
+
+\end{itemize}
+\begin{figure}[H]
+\centering
+\includegraphics[width=5cm,height=7cm]{encryption}
+\caption{Block Diagram of the Encryption Process}
+\label{fig:Block Diagram of Encryption}
+\end{figure}
+
+\subsubsection{Initial and Final Permutations}
+The initial and final permutations are simply bit mappings. This is a very simple method and is especially effective in hardware. In permutations, each bit on the input is assigned to a different index on the output. There are no operations performed, only reassignments. Figure~\ref{fig:permutation} shows this general idea. Please note that this diagram does not represent the diagram for Serpent(it's acutally for DES) and is only being used for an example. The actual permutations can be found in \cite{SERPENT}.
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=16cm,height=7cm]{permutation}
+\caption{A General Permutation}
+\label{fig:permutation}
+\end{figure}
+
+\subsubsection{S-boxes}
+An S-box is simply a look-up-table. In Serpent, the S-boxes are 4-bit permutations. The advantage of an S-box is that for a 1-bit change of an input value, the output is guaranteed to be altered by more than one bit (at least for the Serpent S-boxes). An exmaple S-box can be seen in Figure~\ref{fig:sbox}. Please note that this diagram does not represent the S-box for Serpent. The Serpent S-boxes can be seen in \cite{SERPENT}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=16cm,height=7cm]{sbox}
+\caption{A General S-box}
+\label{fig:sbox}
+\end{figure}
+
+\subsubsection{Linear Transformation}
+The linear transformation functions acts on the 128-bit block as four 32-bit words. Each word is linearly adjusted and combined with other words according to Figure~\ref{fig:linear}. In this figure, $<<<$ denotes a left rotation, and $<<$ denotes a left shift.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=7cm,height=7cm]{linear}
+\caption{Linear Transformation}
+\label{fig:linear}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=7cm,height=11cm]{linear2}
+\caption{Linear Transformation}
+\label{fig:linear2}
+\end{figure}
+
+
+\subsubsection{Decryption}
+Decrption is very similar to encryption. However, inverse S-boxes and linear transformations are used as well as a reverse order of subkeys. This is made most clear with the use of Figure~\ref{fig:decrypt}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=7cm,height=11cm]{decrypt}
+\caption{Block Diagram of the Decryption Process}
+\label{fig:decrypt}
+\end{figure}
+
+%----------------------------------------------------------------------------------------
+%	MAJOR SECTION 1
+%----------------------------------------------------------------------------------------
+
+\section{Original Implementation} % Major section
+%------------------------------------------------
+%------------------------------------------------
+\subsection{Timing Results}
+All timing results were measured on the CS machine, Joplin. Source-code level results were truncated as problem methods are easily identifiable within the first few lines.
+\subsubsection{Total Running Time with no JIT compiler}
+\$ time java -Xint Serpent 1     
+\newline49672ba898d98df95019180445491089
+\newline
+real	0m0.135s
+\newline
+user	0m0.040s
+\newline
+sys	0m0.024s
+\vfill
+\subsubsection{Runtime Profiles of over 100 Seconds}
+
+\$java -Xint -Xprof Serpent 100000
+\newline d3f68d0623563be822d68dde8f4ad282
+\newline Flat profile of 156.42 secs (15402 total ticks): main
+\newline Interpreted \tab + \tab native \tab  Method                        
+\newline  26.7\tab\%  4119\tab  +\tab     0\tab    Serpent.sBox
+\newline  22.8\tab\%  3511\tab  +\tab     0\tab    Serpent.getRoundKey
+\newline  21.4\tab\%  3290\tab  +\tab     0\tab    Serpent.initPermutation
+\newline  21.3\tab\%  3274\tab  +\tab     0\tab    Serpent.linearTransform
+\newline   3.5\tab\%   540\tab  +\tab     0\tab    Serpent.setKey
+\newline   3.5\tab\%   537\tab  +\tab     0\tab    Serpent.finalPermutation
+\newline   0.8\tab\%   128\tab  +\tab     0\tab    Serpent.encrypt
+\newline   0.0\tab\%     0\tab  +\tab     2\tab    java.io.FileInputStream.readBytes
+\newline   0.0\tab\%     0\tab  +\tab     1\tab    java.io.UnixFileSystem.getBooleanAttributes0
+\newline 100.0\tab\% 15399\tab  +\tab     3\tab    Total interpreted
+\newline\$time java -Xint -agentlib:hprof=cpu=samples,depth=10 Serpent 100000
+\newline d3f68d0623563be822d68dde8f4ad282
+\newline Dumping CPU usage by sampling running threads ... done.
+\newline real	2m38.259s
+\newline user	2m38.062s
+\newline sys	0m0.488s
+\newline rank\tab  self\tab\  accum\tab\    count\tab trace \tab method
+\newline    1\tab  7.06\tab\%  7.06\tab\%    1092\tab 300041\tab Serpent.initPermutation
+\newline    2\tab  6.91\tab\% 13.97\tab\%    1070\tab 300033\tab Serpent.linearTransform
+\newline    3\tab  6.57\tab\% 20.54\tab\%    1016\tab 300042\tab Serpent.getRoundKey
+\newline    4\tab  6.30\tab\% 26.84\tab\%     975\tab 300027\tab Serpent.sBox
+\newline    5\tab  6.19\tab\% 33.03\tab\%     958\tab 300074\tab Serpent.initPermutation
+\newline    6\tab  4.25\tab\% 37.27\tab\%     657\tab 300032\tab Serpent.sBox
+\newline    7\tab  2.43\tab\% 39.70\tab\%     376\tab 300040\tab Serpent.initPermutation
+\newline    8\tab  2.35\tab\% 42.05\tab\%     364\tab 300045\tab Serpent.initPermutation
+\newline    9\tab  2.31\tab\% 44.36\tab\%     357\tab 300086\tab Serpent.finalPermutation
+\newline   10\tab  2.29\tab\% 46.66\tab\%     355\tab 300034\tab Serpent.finalPermutation
+\newline   11\tab  2.27\tab\% 48.93\tab\%     352\tab 300051\tab Serpent.initPermutation
+%------------------------------------------------
+\subsection{Analysis}
+These timing results both show the major functions taking the majority of the CPU as expected. Namely, initPermutations. Logically, initial permutations should take very little time as it is only called once for each encryption. However, an implementation was made which uses the inital permutation of the linear transform of the final permutation (IP(LT(FP(x)))) as noted in \cite{SERPENT}.
+
+\subsection{Example Runs}
+\begin{lstlisting}
+java Serpent 1
+49672ba898d98df95019180445491089
+
+java Serpent 100
+5a445efd4923ebddea1d5be4511bd4d6
+
+java Serpent 1000
+d72ec2b7b93fbb567cefbab3fab43fb4
+
+\end{lstlisting}
+Each of these runs use a key of all ``0's" and a plaintext of all ``0's." Please note that these values match the values specified at: http://www.cs.technion.ac.il/~biham/Reports/Serpent/Serpent-256-128.verified.test-vectors
+\section{Optimized Code}
+\subsection{Timing Results}
+\subsubsection{Total Running Time with no JIT compiler}
+\subsubsection{Runtime Profiles of over 100 Seconds}
+\subsection{Analysis}
+\subsection{Example Runs}
+
+\section{Division of Labor}
+\begin{itemize}
+ \item Nicholas Sereni
+ \begin{itemize}
+  \item{Linear Transform}
+  \item{Final Report}
+  \item{Runtime Results}
+  \item{General Debugging}
+ \end{itemize}
+ \item{Dan Grau}
+ \begin{itemize}
+  \item{Initial and Final Permutations}
+  \item{File Reading}
+  \item{Optimizations}
+  \item{General Debugging}
+ \end{itemize}
+ \item{Karl Berger}
+ \begin{itemize}
+  \item{S-Boxes}
+  \item{Decryption}
+  \item{Optimizations}
+  \item{General Debugging}
+ \end{itemize}
+\end{itemize}
+
+\section{Manuals}
+
+%------------------------------------------------
+\section{Source Code}
+\subsection{Original Code}
+\begin{lstlisting}
+CODE GOES HERE!!!!!!! do the same in the next section
+\end{lstlisting}
+\subsection{Optimized Code}
+
+%----------------------------------------------------------------------------------------
+%	BIBLIOGRAPHY
+%----------------------------------------------------------------------------------------
+
+\begin{thebibliography}{99} % Bibliography - this is intentionally simple in this template
+
+\bibitem[Anderson, R., Biham, E., \& Knudsen, L. 1998]{SERPENT}
+Anderson, R., Biham, E., \& Knudsen, L. (1998).
+\newblock Serpent: A proposal for the advanced encryption standard.
+\newblock {\em NIST AES Proposal}, 1–23. Retrieved from ftp://ftp-prod-srv04.it.su.se/pub/security/docs/crypt/Ross\_Anderson/serpent.pdf
+
+\end{thebibliography}
+
+%----------------------------------------------------------------------------------------
+
+\end{document}
