@@ -91,6 +91,7 @@ public class SerpentOptimized implements BlockCipher {
      */
     public void encrypt(byte[] text) {
 		byte[] data = initPermutation(text);
+		System.out.println(Hex.toString(data));
 		byte[] temp = new byte[] {
 				data[12], data[13], data[14], data[15],
 				data[8], data[9], data[10], data[11],
@@ -102,10 +103,13 @@ public class SerpentOptimized implements BlockCipher {
         //32 rounds
         for(int i = 0; i < 32; i++){
             roundKey = getRoundKey(i);
+           // System.out.println("key:"+Hex.toString(roundKey));
             for(int n = 0; n < 16; n++){
                 data[n] = (byte) (data[n] ^ roundKey[n]);
             }
+          //  System.out.println(Hex.toString(data));
             data = sBox(data, i);
+          //  System.out.println(Hex.toString(data));
             
             if(i == 31){
             	roundKey = getRoundKey(32);
@@ -115,6 +119,7 @@ public class SerpentOptimized implements BlockCipher {
             }
             else{
             	data = linearTransform(data);
+          //  	System.out.println(Hex.toString(data));
             }
         }
         data = finalPermutation(data);   
@@ -136,15 +141,44 @@ public class SerpentOptimized implements BlockCipher {
         text[15] = data[12];
     }
 
-    private byte[] initPermutation(byte[] data) {
+    private byte[] initPermutation(byte[] input) {
         byte[] output = new byte[16];
-        for (int i = 0;  i < 128; i++) {
-            int bit = (data[(ipTable[i]) / 8] >>> ((ipTable[i]) % 8)) & 0x01;
-            if ((bit & 0x01) == 1)
-                output[15- (i/8)] |= 1 << (i % 8);
-            else
-                output[15 - (i/8)] &= ~(1 << (i % 8));
-        }
+        output[15] = (byte) ((((input[0] & 0x01))) | (((input[4])& 0x01) << 1) | (((input[8])& 0x01) << 2) | (((input[12])& 0x01) << 3) | 
+                     (((input[0]>>>1)& 0x01) << 4) | (((input[4]>>>1)& 0x01) << 5) | (((input[8]>>>1)& 0x01) << 6) | (((input[12]>>>1)& 0x01) << 7));
+        output[14] = (byte) ((((input[0]>>>2 & 0x01))) | (((input[4]>>>2)& 0x01) << 1) | (((input[8]>>>2)& 0x01) << 2) | (((input[12]>>>2)& 0x01) << 3) | 
+                     (((input[0]>>>3)& 0x01) << 4) | (((input[4]>>>3)& 0x01) << 5) | (((input[8]>>>3)& 0x01) << 6) | (((input[12]>>>3)& 0x01) << 7));
+        output[13] = (byte) ((((input[0]>>>4 & 0x01))) | (((input[4]>>>4)& 0x01) << 1) | (((input[8]>>>4)& 0x01) << 2) | (((input[12]>>>4)& 0x01) << 3) | 
+                     (((input[0]>>>5)& 0x01) << 4) | (((input[4]>>>5)& 0x01) << 5) | (((input[8]>>>5)& 0x01) << 6) | (((input[12]>>>5)& 0x01) << 7));
+        output[12] = (byte) ((((input[0]>>>6 & 0x01))) | (((input[4]>>>6)& 0x01) << 1) | (((input[8]>>>6)& 0x01) << 2) | (((input[12]>>>6)& 0x01) << 3) | 
+                    (((input[0]>>>7)& 0x01) << 4) | (((input[4]>>>7)& 0x01) << 5) | (((input[8]>>>7)& 0x01) << 6) | (((input[12]>>>7)& 0x01) << 7));
+        
+        output[11] = (byte) ((((input[1] & 0x01))) | (((input[5])& 0x01) << 1) | (((input[9])& 0x01) << 2) | (((input[13])& 0x01) << 3) | 
+                    (((input[1]>>>1)& 0x01) << 4) | (((input[5]>>>1)& 0x01) << 5) | (((input[9]>>>1)& 0x01) << 6) | (((input[13]>>>1)& 0x01) << 7));
+        output[10] = (byte) ((((input[1]>>>2 & 0x01))) | (((input[5]>>>2)& 0x01) << 1) | (((input[9]>>>2)& 0x01) << 2) | (((input[13]>>>2)& 0x01) << 3) | 
+                    (((input[1]>>>3)& 0x01) << 4) | (((input[5]>>>3)& 0x01) << 5) | (((input[9]>>>3)& 0x01) << 6) | (((input[13]>>>3)& 0x01) << 7));
+        output[9] = (byte) ((((input[1]>>>4 & 0x01))) | (((input[5]>>>4)& 0x01) << 1) | (((input[9]>>>4)& 0x01) << 2) | (((input[13]>>>4)& 0x01) << 3) | 
+                    (((input[1]>>>5)& 0x01) << 4) | (((input[5]>>>5)& 0x01) << 5) | (((input[9]>>>5)& 0x01) << 6) | (((input[13]>>>5)& 0x01) << 7));
+        output[8] = (byte) ((((input[1]>>>6 & 0x01))) | (((input[5]>>>6)& 0x01) << 1) | (((input[9]>>>6)& 0x01) << 2) | (((input[13]>>>6)& 0x01) << 3) | 
+                    (((input[1]>>>7)& 0x01) << 4) | (((input[5]>>>7)& 0x01) << 5) | (((input[9]>>>7)& 0x01) << 6) | (((input[13]>>>7)& 0x01) << 7));
+        
+        output[7] = (byte) ((((input[2] & 0x01))) | (((input[6])& 0x01) << 1) | (((input[10])& 0x01) << 2) | (((input[14])& 0x01) << 3) | 
+                    (((input[2]>>>1)& 0x01) << 4) | (((input[6]>>>1)& 0x01) << 5) | (((input[10]>>>1)& 0x01) << 6) | (((input[14]>>>1)& 0x01) << 7));
+        output[6] = (byte) ((((input[2]>>>2 & 0x01))) | (((input[6]>>>2)& 0x01) << 1) | (((input[10]>>>2)& 0x01) << 2) | (((input[14]>>>2)& 0x01) << 3) | 
+                    (((input[2]>>>3)& 0x01) << 4) | (((input[6]>>>3)& 0x01) << 5) | (((input[10]>>>3)& 0x01) << 6) | (((input[14]>>>3)& 0x01) << 7));
+        output[5] = (byte) ((((input[2]>>>4 & 0x01))) | (((input[6]>>>4)& 0x01) << 1) | (((input[10]>>>4)& 0x01) << 2) | (((input[14]>>>4)& 0x01) << 3) | 
+                    (((input[2]>>>5)& 0x01) << 4) | (((input[6]>>>5)& 0x01) << 5) | (((input[10]>>>5)& 0x01) << 6) | (((input[14]>>>5)& 0x01) << 7));
+        output[4] = (byte) ((((input[2]>>>6 & 0x01))) | (((input[6]>>>6)& 0x01) << 1) | (((input[10]>>>6)& 0x01) << 2) | (((input[14]>>>6)& 0x01) << 3) | 
+                    (((input[2]>>>7)& 0x01) << 4) | (((input[6]>>>7)& 0x01) << 5) | (((input[10]>>>7)& 0x01) << 6) | (((input[14]>>>7)& 0x01) << 7));
+
+        output[3] = (byte) ((((input[3] & 0x01))) | (((input[7])& 0x01) << 1) | (((input[11])& 0x01) << 2) | (((input[15])& 0x01) << 3) | 
+                    (((input[3]>>>1)& 0x01) << 4) | (((input[7]>>>1)& 0x01) << 5) | (((input[11]>>>1)& 0x01) << 6) | (((input[15]>>>1)& 0x01) << 7));
+        output[2] = (byte) ((((input[3]>>>2 & 0x01))) | (((input[7]>>>2)& 0x01) << 1) | (((input[11]>>>2)& 0x01) << 2) | (((input[15]>>>2)& 0x01) << 3) | 
+                    (((input[3]>>>3)& 0x01) << 4) | (((input[7]>>>3)& 0x01) << 5) | (((input[11]>>>3)& 0x01) << 6) | (((input[15]>>>3)& 0x01) << 7));
+        output[1] = (byte) ((((input[3]>>>4 & 0x01))) | (((input[7]>>>4)& 0x01) << 1) | (((input[11]>>>4)& 0x01) << 2) | (((input[15]>>>4)& 0x01) << 3) | 
+                    (((input[3]>>>5)& 0x01) << 4) | (((input[7]>>>5)& 0x01) << 5) | (((input[11]>>>5)& 0x01) << 6) | (((input[15]>>>5)& 0x01) << 7));
+        output[0] = (byte) ((((input[3]>>>6 & 0x01))) | (((input[7]>>>6)& 0x01) << 1) | (((input[11]>>>6)& 0x01) << 2) | (((input[15]>>>6)& 0x01) << 3) | 
+                    (((input[3]>>>7)& 0x01) << 4) | (((input[7]>>>7)& 0x01) << 5) | (((input[11]>>>7)& 0x01) << 6) | (((input[15]>>>7)& 0x01) << 7));
+                    
         return output; 
     }
 
