@@ -236,7 +236,8 @@ public class SerpentOptimized implements BlockCipher {
     }
 
     /**
-     * Perform final permutation on the input
+     * Perform finalls
+      permutation on the input
      *
      * @param data Input bit sequence
      */
