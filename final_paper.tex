@@ -30,7 +30,7 @@
 
 %\setlength\parindent{0pt} % Uncomment to remove all indentation from paragraphs
 
-\graphicspath{{./Pictures/}} % Specifies the directory where pictures are stored
+\graphicspath{{.}} % Specifies the directory where pictures are stored
 \newcommand{\tab}{\hspace*{2em}}
 
 \begin{document}
@@ -276,11 +276,31 @@ Each of these runs use a key of all ``0's" and a plaintext of all ``0's." Please
 \end{itemize}
 
 \section{Manuals}
+\subsection{Developer's Guide}
+  If the source code has been removed from the given archive, then all that is required is BlockCipher.java and Serpent.java (or SerpentOptimized.java to run the optimized code).  Execute the following command to compile the program:
+  \begin{verbatim}
+  	javac -classpath <path to Parallel Java library> BlockCipher.java Serpent.java
+  \end{verbatim}
+  
+\subsection{User's Guide}
+  Once the program has been compiled, there are two ways in which it can be run.  The first is to encrypt a block of 0s N number of times with a key of all 0s.
+  \begin{verbatim}
+  	java Serpent <N>
+  \end{verbatim}
+  The second way to run the program is the encrypt or decrypt a file.  There are 5 arguments to the program in this case and are as follows.
+  \begin{verbatim}
+  	java Serpent <input filename> <output filename> <key in hex> \
+  	  <integer Nonce> <`e' to encrypt or `d' to decrypt>
+  \end{verbatim}
+  For example:
+  \begin{verbatim}
+  	java Serpent cat.jpg cat.encrypt 112233445566778899aabbccddeeff 12345 e
+  \end{verbatim}
 
 %------------------------------------------------
 \section{Source Code}
 \subsection{Original Code}
-\begin{lstlisting}
+\begin{lstlisting}[language=Java, basicstyle=\small, breaklines=true]
 import edu.rit.util.Hex;
 import edu.rit.util.Packing;
 import java.nio.ByteBuffer;
@@ -331,7 +351,7 @@ public class Serpent implements BlockCipher {
             for( int i = 0; i < key.length; i++ ) {
                 this.key[i] = key[i];
             }
-			//Pad key to 256-bit
+			      //Pad key to 256-bit
             for( int i = key.length; i < keySize(); i++ ) {
                 if( i == key.length ) {
                     //Start of padding!
@@ -349,11 +369,11 @@ public class Serpent implements BlockCipher {
             prekeys[i] = Packing.packIntBigEndian(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3]}, 0);
         }
         //Build out prekey array
-		//There's a shift of 8 positions here because I build the intermediate keys in the same
-		//array as the other prekeys.
+		    //There's a shift of 8 positions here because I build the intermediate keys in the same
+		    //array as the other prekeys.
         for( int i = 8; i < prekeys.length; i++ ) {
             byte[] prnt = new byte[4];
-			//Phi is the fractional part of the golden ratio
+			      //Phi is the fractional part of the golden ratio
             int phi = 0x9e3779b9;
             int tmp;
             tmp = prekeys[i-8] ^ prekeys[i-5] ^ prekeys[i-3] ^ prekeys[i-1] ^ 
@@ -394,9 +414,9 @@ public class Serpent implements BlockCipher {
             data = sBox(data, i);
             
             if(i == 31){
-				//For round 32, instead of a linear transform
-				// we get the last produced round key and xor 
-				// it with the current state.
+				        //For round 32, instead of a linear transform
+				        // we get the last produced round key and xor 
+				        // it with the current state.
                 roundKey = getRoundKey(32);
                 for(int n = 0; n < 16; n++){
                     data[n] = (byte) (data[n] ^ roundKey[n]);
@@ -427,7 +447,7 @@ public class Serpent implements BlockCipher {
 
     /**
      * Decrypt the given ciphertext.  We decrypt by performing the inverse
-	 * operations performed to encrypt in reverse order.
+	   * operations performed to encrypt in reverse order.
      *
      * @param  text  ciphertext (on input), original plaintext (on output).
      */
@@ -476,7 +496,7 @@ public class Serpent implements BlockCipher {
     private byte[] initPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
-			//Bit permutation based on ip lookup table
+			      //Bit permutation based on ip lookup table
             int bit = (data[(ipTable[i]) / 8] >>> ((ipTable[i]) % 8)) & 0x01;
             if ((bit & 0x01) == 1)
                 output[15- (i/8)] |= 1 << (i % 8);
@@ -489,7 +509,7 @@ public class Serpent implements BlockCipher {
     private byte[] finalPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
-			//Bit permutation based on fp lookup table
+			      //Bit permutation based on fp lookup table
             int bit = (data[15-fpTable[i] / 8] >>> (fpTable[i] % 8)) & 0x01;
             if ((bit & 0x01) == 1)
                 output[(i/8)] |= 1 << (i % 8);
@@ -635,7 +655,7 @@ public class Serpent implements BlockCipher {
 
     /**
      * Performs inverse linear transformation on the input bit sequence.
-	 * This is the linear transform in reverse with inverted operations.
+	   * This is the linear transform in reverse with inverted operations.
      * 
      * @param data Input bit sequence
      * @return output bit sequence
