@@ -1214,7 +1214,7 @@ public class SerpentOptimized implements BlockCipher {
      * input filename, output filename, key (up to 32 bytes in hex), nonce (integer), and [e]ncrypt or [d]ecrypt
      */
     public static void main( String[] args ) {
-        Serpent serpent = new Serpent();
+        SerpentOptimized serpent = new SerpentOptimized();
         if(args.length == 1)
         {
             byte[] test_in = new byte[] {
