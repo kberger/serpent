@@ -241,6 +241,10 @@ java Serpent 100
 java Serpent 1000
 d72ec2b7b93fbb567cefbab3fab43fb4
 
+java Serpent input.txt output.txt 00000000000000000000000000000000 0 e
+
+java Serpent input.txt output.txt 00000000000000000000000000000000 0 d
+
 \end{lstlisting}
 Each of these runs use a key of all ``0's" and a plaintext of all ``0's." Please note that these values match the values specified at: http://www.cs.technion.ac.il/~biham/Reports/Serpent/Serpent-256-128.verified.test-vectors
 \section{Optimized Code}
@@ -276,6 +280,37 @@ Each of these runs use a key of all ``0's" and a plaintext of all ``0's." Please
 \end{itemize}
 
 \section{Manuals}
+This code is designed to be run on the CS machines. Before compiling and running, your classpath must be edited with the following line(if using bash):
+\begin{lstlisting}
+export CLASSPATH=.:/home/fac/ark/public_html/pj/lib
+\end{lstlisting}
+If you are not on the CS machines, you must download and extract the parallel java library .jar from:
+\begin{lstlisting}
+http://www.cs.rit.edu/~ark/pj.shtml#download
+\end{lstlisting}
+and set your classpath in a similar fashion.  Once this has been accomplished, the source can be compiled in two fashions:
+\begin{lstlisting}
+javac Serpent.java
+
+javac SerpentOptimized.java
+\end{lstlisting}
+These commands compile the unoptimized and optimized versions respectively. Each version can be run in different modes.  The most simple version is used for timing metrics and only takes an integer as in input which specifies the number of runs to perform.  The command will look like this:
+
+\begin{lstlisting}
+java Serpent <numRuns>
+
+java SerpentOptimized <numRuns>
+\end{lstlisting}
+
+The next option allows for encryption and decryption of a file. The format for this option is:
+
+\begin{lstlisting}
+java Serpent <intput_file> <output_file> <key> <nonce> <e/d>
+
+java SerpentOptimized <intput_file> <output_file> <key> <nonce> <e/d>
+\end{lstlisting}
+
+In these cases the key must be specified with 32 hex characters on the command line and the nonce is an integer. E specified\s encryption and D specifies decryption.
 
 %------------------------------------------------
 \section{Source Code}
