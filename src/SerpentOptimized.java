@@ -269,7 +269,7 @@ public class SerpentOptimized implements BlockCipher {
      */
     private byte[] linearTransform(byte[] data){
     	data = finalPermutation(data);
-    	byte[] output = new byte[blockSize()];
+    	//byte[] output = new byte[blockSize()];
     	ByteBuffer buffer = ByteBuffer.wrap(data);
     	//buffer.order(ByteOrder.LITTLE_ENDIAN);
     	int x0 =  buffer.getInt();
@@ -292,10 +292,10 @@ public class SerpentOptimized implements BlockCipher {
     	buffer.putInt(x2);
     	buffer.putInt(x3);
     	
-    	output = buffer.array();
-    	output = initPermutation(output);
+    	data = buffer.array();
+    	data = initPermutation(data);
     	
-    	return output;
+    	return data;
     }
     private byte[] getRoundKey(int round) {
         int k0 = prekeys[4*round+8];

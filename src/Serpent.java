@@ -449,15 +449,9 @@ public class Serpent implements BlockCipher {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             };
             int iters = Integer.parseInt(args[0]);
-            System.out.println(Hex.toString(test_in));
             for(int n = 0; n < iters; n++){
                 serpent.setKey(test_key);
                 serpent.encrypt(test_in);
-            }
-            System.out.println(Hex.toString(test_in));
-
-            for(int n = 0; n < iters; n++){
-                serpent.decrypt(test_in);
             }
             System.out.println(Hex.toString(test_in));
             
