@@ -141,6 +141,59 @@ public class SerpentOptimized implements BlockCipher {
         text[15] = data[12];
     }
 
+    /**
+     * Decrypt the given ciphertext.  We decrypt by performing the inverse
+     * operations performed to encrypt in reverse order.
+     *
+     * @param  text  ciphertext (on input), original plaintext (on output).
+     */
+    public void decrypt(byte[] text) {
+        byte[] temp = new byte[] {
+                text[3], text[2], text[1], text[0],
+                text[7], text[6], text[5], text[4],
+                text[11], text[10], text[9], text[8],
+                text[15], text[14], text[13], text[12],
+            };
+        byte[] data = initPermutation(temp);
+        byte[] roundKey = getRoundKey(32);
+        for(int n = 0; n < 16; n++){
+            data[n] = (byte) (data[n] ^ roundKey[n]);
+        }
+        //32 rounds in reverse
+        for(int i = 31; i >= 0; i--){
+            if(i!=31){
+                data = invLinearTransform(data);
+            }
+            data = sBoxInv(data, i);
+            roundKey = getRoundKey(i);
+            for(int n = 0; n < 16; n++){
+                data[n] = (byte) (data[n] ^ roundKey[n]);
+            }
+        }
+        data = finalPermutation(data);   
+        text[0] = data[3];
+        text[1] = data[2];
+        text[2] = data[1];
+        text[3] = data[0];
+        text[4] = data[7];
+        text[5] = data[6];
+        text[6] = data[5];
+        text[7] = data[4];
+        text[8] = data[11];
+        text[9] = data[10];
+        text[10] = data[9];
+        text[11] = data[8];
+        text[12] = data[15];
+        text[13] = data[14];
+        text[14] = data[13];
+        text[15] = data[12];
+    }
+
+    /**
+     * Perform initial permutation on the input
+     *
+     * @param data Input bit sequence
+     */
     private byte[] initPermutation(byte[] input) {
         byte[] output = new byte[16];
         output[15] = (byte) ((((input[0] & 0x01))) | (((input[4])& 0x01) << 1) | (((input[8])& 0x01) << 2) | (((input[12])& 0x01) << 3) | 
@@ -182,6 +235,11 @@ public class SerpentOptimized implements BlockCipher {
         return output; 
     }
 
+    /**
+     * Perform final permutation on the input
+     *
+     * @param data Input bit sequence
+     */
     private byte[] finalPermutation(byte[] input) {
         byte[] output = new byte[16];
         output[0] = (byte) ((((input[15]>>>0) & 0x01)) | (((input[15]>>>4)& 0x01) << 1) | (((input[14]>>>0)& 0x01) << 2) | (((input[14]>>>4)& 0x01) << 3) | 
@@ -260,6 +318,44 @@ public class SerpentOptimized implements BlockCipher {
         }
         return output;
     }
+
+    private static byte[] is0 = new byte[]
+        {13,3,11,0,10,6,5,12,1,14,4,7,15,9,8,2};
+    private static byte[] is1 = new byte[]
+        {5,8,2,14,15,6,12,3,11,4,7,9,1,13,10,0};
+    private static byte[] is2 = new byte[]
+        {12,9,15,4,11,14,1,2,0,3,6,13,5,8,10,7};
+    private static byte[] is3 = new byte[]
+        {0,9,10,7,11,14,6,13,3,5,12,2,4,8,15,1};
+    private static byte[] is4 = new byte[]
+        {5,0,8,3,10,9,7,14,2,12,11,6,4,15,13,1};
+    private static byte[] is5 = new byte[]
+        {8,15,2,9,4,1,13,14,11,6,5,3,7,12,10,0};
+    private static byte[] is6 = new byte[]
+        {15,10,1,13,5,3,6,0,4,9,14,7,2,12,8,11};
+    private static byte[] is7 = new byte[]
+        {3,0,6,13,9,14,15,8,5,12,11,7,10,1,4,2};
+    private static byte[][] isBoxes = new byte[][]
+        {is0,is1,is2,is3,is4,is5,is6,is7};    
+
+    /**
+     * Perform inverse S-Box manipulation to the given byte array of <TT>blocksize()</TT> length.
+     *
+     * @param data Input bit sequence
+     * @param round Number of the current round, used to determine which inverted S-Box to use.
+     */
+    private byte[] sBoxInv(byte[] data, int round) {
+        byte[] toUse = isBoxes[round%8];
+        byte[] output = new byte[blockSize()];
+        for( int i = 0; i < blockSize(); i++ ) {
+            //Break signed-ness
+            int curr = data[i]&0xFF;
+            byte low4 = (byte)(curr>>>4);
+            byte high4 = (byte)(curr&0x0F);
+            output[i] = (byte) ((toUse[low4]<<4) ^ (toUse[high4]));
+        }
+        return output;
+    }
     
     /**
      * Performs linear transformation on the input bit sequence
@@ -297,6 +393,52 @@ public class SerpentOptimized implements BlockCipher {
     	
     	return data;
     }
+
+    /**
+     * Performs inverse linear transformation on the input bit sequence.
+     * This is the linear transform in reverse with inverted operations.
+     * 
+     * @param data Input bit sequence
+     * @return output bit sequence
+     */
+    private byte[] invLinearTransform(byte[] data){
+        data = finalPermutation(data);
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        int x0 =  buffer.getInt();
+        int x1 =  buffer.getInt();
+        int x2 =  buffer.getInt();
+        int x3 =  buffer.getInt();
+
+        x2 = (x2 >>> 22) | (x2 << (32-22));
+        x0 = (x0 >>> 5) | (x0 << (32-5));
+        x2 = x2 ^ x3 ^ (x1 << 7);
+        x0 = x0 ^ x1 ^ x3;
+        x3 = (x3 >>> 7) | (x3 << (32-7));
+        x1 = (x1 >>> 1) | (x1 << (32-1));
+        x3 = x3 ^ x2 ^ (x0 << 3);
+        x1 = x1 ^ x0 ^ x2;
+        x2 = (x2 >>> 3) | (x2 << (32-3));
+        x0 = (x0 >>> 13) | (x0 << (32-13));
+        
+        buffer.clear();
+        buffer.putInt(x0);
+        buffer.putInt(x1);
+        buffer.putInt(x2);
+        buffer.putInt(x3);
+
+        data = buffer.array();
+        data = initPermutation(data);
+
+        return data;
+    }
+
+    /**
+     * Fetches round key.  Round keys are built on request from the
+     * prekeys that were created when the key was set.
+     *
+     * @param round Number of the round for which a key is needed.
+     * @return byte[] The round key for the requested round.
+     */
     private byte[] getRoundKey(int round) {
         int k0 = prekeys[4*round+8];
         int k1 = prekeys[4*round+9];
@@ -332,16 +474,17 @@ public class SerpentOptimized implements BlockCipher {
      * sets an all-zero-byte key, performs N encryptions of an all-zero-byte plaintext block
      * or 
      * encrypts the contents of the input file, storing the result in an output file
-     * args either specifies N or input file, output file, key, and nonce
+     * args either specifies N or 
+     * input filename, output filename, key (up to 32 bytes in hex), nonce (integer), and [e]ncrypt or [d]ecrypt
      */
     public static void main( String[] args ) {
-        SerpentOptimized serpent = new SerpentOptimized();
+        Serpent serpent = new Serpent();
         if(args.length == 1)
         {
-       	 	byte[] test_in = new byte[] {
-       	 		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            byte[] test_in = new byte[] {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-             };
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            };
             byte[] test_key = new byte[] {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -356,45 +499,67 @@ public class SerpentOptimized implements BlockCipher {
             System.out.println(Hex.toString(test_in));
             
         }
-        else if (args.length == 4) {
+        else if (args.length == 5) {
             //read file
-        	try{
+            try{
             File file_in = new File(args[0]);
             byte [] fileData = new byte[(int)file_in.length()];
             DataInputStream in_stream = new DataInputStream((new FileInputStream(file_in)));
             in_stream.readFully(fileData);
             in_stream.close();
-            //add nonce to key
             byte[] key = Hex.toByteArray(args[2]);
             //set key
             serpent.setKey(key);
             //setup file writing
             File file_out = new File(args[1]);
             DataOutputStream out_stream = new DataOutputStream((new FileOutputStream(file_out)));
-            //encrypt
-            byte[] iv = serpent.getRoundKey(Integer.parseInt(args[3]));
-            for(int i = 0; i < fileData.length-16; i+=16){
-                byte[] block = new byte[] {
-                    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-                };
-                for(int n = 0; n < 16 && n < fileData.length; n++){
-                    block[n] = (byte) (fileData[i+n] ^ iv[n]);
+            byte[] iv = new byte[16];
+            //Create Nonce from 4th argument.
+            Packing.unpackIntLittleEndian(Integer.parseInt(args[3]),iv,0);
+            serpent.encrypt(iv);
+            //File encryption in CBC mode
+            if(args[4].equals("e")) {
+                for(int i = 0; i < fileData.length; i+=16){
+                    byte[] block = new byte[] {
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+                    };
+                    for(int n = 0; n < 16 && i+n < fileData.length; n++){
+                        block[n] = (byte) (fileData[i+n] ^ iv[n]);
+                    }
+                    serpent.encrypt(block);
+                    iv = block;
+                    out_stream.write(block, 0, block.length);
                 }
-                serpent.encrypt(block);
-                iv = block;
-		//System.out.println(Hex.toString(block));
-                out_stream.write(block, 0, block.length);
+            }
+            //File decryption in CBC mode
+            else if(args[4].equals("d")) {
+                for(int i = 0; i < fileData.length; i+=16){
+                    byte[] block = new byte[] {
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+                    };
+                    for(int n = 0; n < 16 && n < fileData.length; n++){
+                        block[n] = (byte) (fileData[i+n]);
+                    }
+                    byte[] savedForIV = Arrays.copyOf(block,16);
+                    serpent.decrypt(block);
+                    for(int n = 0; n < 16; n++){
+                        block[n] = (byte) (block[n] ^ iv[n]);
+                    }
+                    iv = savedForIV;
+                    out_stream.write(block, 0, block.length);
+                }
+            }
+            else {
+                System.out.println("Encrypt/Decrypt option invalid, input e or d as 5th argument.");
             }
             out_stream.close();
-        	}
-        	catch(IOException e){
-        	  System.err.println(e.getMessage());
-        	}
+            }
+            catch(IOException e){
+              System.err.println(e.getMessage());
+            }
         }
-        //sBoxTest();
-        //setKeyTest();
-        //IPTest();
     }
 }//Serpent.java
 
