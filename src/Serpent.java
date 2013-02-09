@@ -48,6 +48,7 @@ public class Serpent implements BlockCipher {
             for( int i = 0; i < key.length; i++ ) {
                 this.key[i] = key[i];
             }
+			//Pad key to 256-bit
             for( int i = key.length; i < keySize(); i++ ) {
                 if( i == key.length ) {
                     //Start of padding!
@@ -65,10 +66,12 @@ public class Serpent implements BlockCipher {
             prekeys[i] = Packing.packIntBigEndian(new byte[]{this.key[4*i],this.key[4*i+1],this.key[4*i+2],this.key[4*i+3]}, 0);
         }
         //Build out prekey array
+		//There's a shift of 8 positions here because I build the intermediate keys in the same
+		//array as the other prekeys.
         for( int i = 8; i < prekeys.length; i++ ) {
             byte[] prnt = new byte[4];
+			//Phi is the fractional part of the golden ratio
             int phi = 0x9e3779b9;
-            //(x << n) | (x >>> (32 - n)) Rotate
             int tmp;
             tmp = prekeys[i-8] ^ prekeys[i-5] ^ prekeys[i-3] ^ prekeys[i-1] ^ 
                 i-8 ^ phi;
@@ -106,16 +109,17 @@ public class Serpent implements BlockCipher {
                 data[n] = (byte) (data[n] ^ roundKey[n]);
             }
             data = sBox(data, i);
-            //System.out.println("Using SBox " + (i));
             
             if(i == 31){
+				//For round 32, instead of a linear transform
+				// we get the last produced round key and xor 
+				// it with the current state.
                 roundKey = getRoundKey(32);
                 for(int n = 0; n < 16; n++){
                     data[n] = (byte) (data[n] ^ roundKey[n]);
                 } 
             }
             else{
-                //System.out.println("Applying LinearTrans " + i);
                 data = linearTransform(data);
             }
         }
@@ -139,13 +143,10 @@ public class Serpent implements BlockCipher {
     }
 
     /**
-     * Encrypt the given plaintext. <TT>text</TT> must be an array of bytes
-     * whose length is equal to <TT>blockSize()</TT>. On input, <TT>text</TT>
-     * contains the plaintext block. The plaintext block is encrypted using the
-     * key specified in the most recent call to <TT>setKey()</TT>. On output,
-     * <TT>text</TT> contains the ciphertext block.
+     * Decrypt the given ciphertext.  We decrypt by performing the inverse
+	 * operations performed to encrypt in reverse order.
      *
-     * @param  text  Plaintext (on input), ciphertext (on output).
+     * @param  text  ciphertext (on input), original plaintext (on output).
      */
     public void decrypt(byte[] text) {
         byte[] temp = new byte[] {
@@ -165,12 +166,10 @@ public class Serpent implements BlockCipher {
                 data = invLinearTransform(data);
             }
             data = sBoxInv(data, i);
-            //System.out.println("Using ISBox " + (i));
             roundKey = getRoundKey(i);
             for(int n = 0; n < 16; n++){
                 data[n] = (byte) (data[n] ^ roundKey[n]);
             }
-            //System.out.println("Applying InvLinTrans " + i);
         }
         data = finalPermutation(data);   
         text[0] = data[3];
@@ -194,6 +193,7 @@ public class Serpent implements BlockCipher {
     private byte[] initPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
+			//Bit permutation based on ip lookup table
             int bit = (data[(ipTable[i]) / 8] >>> ((ipTable[i]) % 8)) & 0x01;
             if ((bit & 0x01) == 1)
                 output[15- (i/8)] |= 1 << (i % 8);
@@ -206,6 +206,7 @@ public class Serpent implements BlockCipher {
     private byte[] finalPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
+			//Bit permutation based on fp lookup table
             int bit = (data[15-fpTable[i] / 8] >>> (fpTable[i] % 8)) & 0x01;
             if ((bit & 0x01) == 1)
                 output[(i/8)] |= 1 << (i % 8);
@@ -276,7 +277,7 @@ public class Serpent implements BlockCipher {
      * Perform inverse S-Box manipulation to the given byte array of <TT>blocksize()</TT> length.
      *
      * @param data Input bit sequence
-     * @param round Number of the current round, used to determine which S-Box to use.
+     * @param round Number of the current round, used to determine which inverted S-Box to use.
      */
     private byte[] sBoxInv(byte[] data, int round) {
         byte[] toUse = isBoxes[round%8];
@@ -350,7 +351,8 @@ public class Serpent implements BlockCipher {
     }
 
     /**
-     * Performs inverse linear transformation on the input bit sequence
+     * Performs inverse linear transformation on the input bit sequence.
+	 * This is the linear transform in reverse with inverted operations.
      * 
      * @param data Input bit sequence
      * @return output bit sequence
@@ -387,6 +389,13 @@ public class Serpent implements BlockCipher {
         return output;
     }
 
+	/**
+	 * Fetches round key.  Round keys are built on request from the
+	 * prekeys that were created when the key was set.
+	 *
+	 * @param round Number of the round for which a key is needed.
+	 * @return byte[] The round key for the requested round.
+	 */
     private byte[] getRoundKey(int round) {
         int k0 = prekeys[4*round+8];
         int k1 = prekeys[4*round+9];
@@ -422,20 +431,17 @@ public class Serpent implements BlockCipher {
      * sets an all-zero-byte key, performs N encryptions of an all-zero-byte plaintext block
      * or 
      * encrypts the contents of the input file, storing the result in an output file
-     * args either specifies N or input file, output file, key, nonce, and [e]ncrypt or [d]ecrypt
+     * args either specifies N or 
+	 * input filename, output filename, key (up to 32 bytes in hex), nonce (integer), and [e]ncrypt or [d]ecrypt
      */
     public static void main( String[] args ) {
         Serpent serpent = new Serpent();
         if(args.length == 1)
         {
             byte[] test_in = new byte[] {
-                0x10,0x00,0x00,0x00,0x04,0x00,0x07,0x00,
-                0x00,0x00,0x00,0x50,0x04,0x07,0x00,0x00,
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
             };
-            /*byte[] test_in = new byte[] {
-                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            };*/
             byte[] test_key = new byte[] {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -464,7 +470,6 @@ public class Serpent implements BlockCipher {
             DataInputStream in_stream = new DataInputStream((new FileInputStream(file_in)));
             in_stream.readFully(fileData);
             in_stream.close();
-            //add nonce to key
             byte[] key = Hex.toByteArray(args[2]);
             //set key
             serpent.setKey(key);
@@ -472,9 +477,10 @@ public class Serpent implements BlockCipher {
             File file_out = new File(args[1]);
             DataOutputStream out_stream = new DataOutputStream((new FileOutputStream(file_out)));
             byte[] iv = new byte[16];
+			//Create Nonce from 4th argument.
             Packing.unpackIntLittleEndian(Integer.parseInt(args[3]),iv,0);
             serpent.encrypt(iv);
-            //Encryption
+            //File encryption in CBC mode
             if(args[4].equals("e")) {
                 for(int i = 0; i < fileData.length; i+=16){
                     byte[] block = new byte[] {
@@ -486,10 +492,10 @@ public class Serpent implements BlockCipher {
                     }
                     serpent.encrypt(block);
                     iv = block;
-                    //System.out.println(Hex.toString(block));
                     out_stream.write(block, 0, block.length);
                 }
             }
+			//File decryption in CBC mode
             else if(args[4].equals("d")) {
                 for(int i = 0; i < fileData.length; i+=16){
                     byte[] block = new byte[] {
@@ -505,7 +511,6 @@ public class Serpent implements BlockCipher {
                         block[n] = (byte) (block[n] ^ iv[n]);
                     }
                     iv = savedForIV;
-                    //System.out.println(Hex.toString(block));
                     out_stream.write(block, 0, block.length);
                 }
             }
@@ -518,11 +523,9 @@ public class Serpent implements BlockCipher {
               System.err.println(e.getMessage());
             }
         }
-        //sBoxTest();
-        //setKeyTest();
-        //IPTest();
-        //transformTest();
     }
+	
+	// Test functions below.
 
     private static void setKeyTest() {
         Serpent serpent = new Serpent();
