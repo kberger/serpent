@@ -190,6 +190,11 @@ public class Serpent implements BlockCipher {
         text[15] = data[12];
     }
 
+    /**
+     * Perform initial permutation on the input
+     *
+     * @param data Input bit sequence
+     */
     private byte[] initPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
@@ -203,6 +208,11 @@ public class Serpent implements BlockCipher {
         return output; 
     }
 
+    /**
+     * Perform final permutation on the input
+     *
+     * @param data Input bit sequence
+     */
     private byte[] finalPermutation(byte[] data) {
         byte[] output = new byte[16];
         for (int i = 0;  i < 128; i++) {
@@ -449,15 +459,9 @@ public class Serpent implements BlockCipher {
                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             };
             int iters = Integer.parseInt(args[0]);
-            System.out.println(Hex.toString(test_in));
             for(int n = 0; n < iters; n++){
                 serpent.setKey(test_key);
                 serpent.encrypt(test_in);
-            }
-            System.out.println(Hex.toString(test_in));
-
-            for(int n = 0; n < iters; n++){
-                serpent.decrypt(test_in);
             }
             System.out.println(Hex.toString(test_in));
             
@@ -523,158 +527,6 @@ public class Serpent implements BlockCipher {
               System.err.println(e.getMessage());
             }
         }
-    }
-	
-	// Test functions below.
-
-    private static void setKeyTest() {
-        Serpent serpent = new Serpent();
-
-        byte[] test3 = new byte[] {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-        serpent.setKey( test3 );
-        System.out.println("Test key: " + Hex.toString(test3));
-        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
-        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
-        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
-        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
-
-        byte[] test4 = new byte[] {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-        serpent.setKey( test4 );
-        System.out.println("Test key: " + Hex.toString(test4));
-        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
-        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
-        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
-        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
-
-        byte[] test1 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
-            (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
-        serpent.setKey( test1 );
-        System.out.println("Testing key setting and round key generation.");
-        System.out.println("Test key: " + Hex.toString(test1));
-        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
-        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
-        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
-        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
-
-        byte[] test2 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
-            (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF,
-            0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
-            (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
-        serpent.setKey( test2 );
-        System.out.println("Test key: " + Hex.toString(test2));
-        System.out.println("Round 0 : " + Hex.toString(serpent.getRoundKey(0)));
-        System.out.println("Round 1 : " + Hex.toString(serpent.getRoundKey(1)));
-        System.out.println("Round 2 : " + Hex.toString(serpent.getRoundKey(2)));
-        System.out.println("Round 3 : " + Hex.toString(serpent.getRoundKey(3)));
-    }
-
-    private static void sBoxTest(){
-        Serpent serpent = new Serpent();
-        byte[] test0 = new byte[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-        byte[] test1 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
-            (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
-        byte[] test2 = new byte[] {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
-        byte[] test3 = new byte[] {0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10};
-
-        System.out.println( Hex.toString(test0));
-        byte [] test0out = serpent.sBox(test0,0);
-        System.out.println( Hex.toString(test0out));
-        System.out.println( Hex.toString(serpent.sBoxInv(test0out,0)));
-        System.out.println();
-
-        System.out.println( Hex.toString(test1) );
-        byte [] test1out = serpent.sBox(test1,1);
-        System.out.println( Hex.toString(test1out) );
-        System.out.println( Hex.toString(serpent.sBoxInv(test1out,1)));
-        System.out.println();
-
-        System.out.println( Hex.toString(test2) );
-        byte [] test2out = serpent.sBox(test2,2);
-        System.out.println( Hex.toString(test2out) );
-        System.out.println( Hex.toString(serpent.sBoxInv(test2out,2)));
-        System.out.println();
-
-        System.out.println( Hex.toString(test3) );
-        byte [] test3out = serpent.sBox(test3,3);
-        System.out.println( Hex.toString(test3out) );
-        System.out.println( Hex.toString(serpent.sBoxInv(test3out,3)));
-        System.out.println();
-
-        System.out.println( Hex.toString(test0));
-        byte [] test4out = serpent.sBox(test0,4);
-        System.out.println( Hex.toString(test4out));
-        System.out.println( Hex.toString(serpent.sBoxInv(test4out,4)));
-        System.out.println();
-
-        System.out.println( Hex.toString(test1) );
-        byte [] test5out = serpent.sBox(test1,5);
-        System.out.println( Hex.toString(test5out) );
-        System.out.println( Hex.toString(serpent.sBoxInv(test5out,5)));
-        System.out.println();
-
-        System.out.println( Hex.toString(test2) );
-        byte [] test6out = serpent.sBox(test2,6);
-        System.out.println( Hex.toString(test6out) );
-        System.out.println( Hex.toString(serpent.sBoxInv(test6out,6)));
-        System.out.println();
-
-        System.out.println( Hex.toString(test3) );
-        byte [] test7out = serpent.sBox(test3,7);
-        System.out.println( Hex.toString(test7out) );
-        System.out.println( Hex.toString(serpent.sBoxInv(test7out,7)));
-    }
-
-    private static void IPTest() {
-        Serpent tSerp = new Serpent();
-        byte[] test = new byte[]{
-            (byte)0x12,(byte)0x34,(byte)0x56,(byte)0x78,
-            (byte)0x9a,(byte)0xbc,(byte)0xde,(byte)0xff,
-            (byte)0x12,(byte)0x34,(byte)0x56,(byte)0x78,
-            (byte)0x9a,(byte)0xbc,(byte)0xde,(byte)0xff
-        };
-        System.out.println("Test1: "+Hex.toString(test));
-        System.out.println("Init Test1: "+Hex.toString(tSerp.initPermutation(test)));
-        System.out.println("InvInit Test1: "+Hex.toString(tSerp.finalPermutation(tSerp.initPermutation(test))));
-        System.out.println();
-
-        System.out.println("Final Test1: "+Hex.toString(tSerp.finalPermutation(test)));
-        System.out.println("InvFinal Test1: "+Hex.toString(tSerp.initPermutation(tSerp.finalPermutation(test))));
-    }
-
-    private static void transformTest() {
-        Serpent serpent = new Serpent();
-        byte[] test0 = new byte[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-        byte[] test1 = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
-            (byte)0x88,(byte)0x99,(byte)0xAA,(byte)0xBB,(byte)0xCC,(byte)0xDD,(byte)0xEE,(byte)0xFF};
-        byte[] test2 = new byte[] {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
-        byte[] test3 = new byte[] {0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10};        
-
-        System.out.println( Hex.toString(test0) );
-        byte[] test0out = serpent.linearTransform(test0);
-        System.out.println( Hex.toString(test0out) );
-        System.out.println( Hex.toString(serpent.invLinearTransform(test0out)) );
-        System.out.println();
-
-        System.out.println( Hex.toString(test1) );
-        byte[] test1out = serpent.linearTransform(test1);
-        System.out.println( Hex.toString(test1out) );
-        System.out.println( Hex.toString(serpent.invLinearTransform(test1out)) );
-        System.out.println();
-
-        System.out.println( Hex.toString(test2) );
-        byte[] test2out = serpent.linearTransform(test2);
-        System.out.println( Hex.toString(test2out) );
-        System.out.println( Hex.toString(serpent.invLinearTransform(test2out)) );
-        System.out.println();
-
-        System.out.println( Hex.toString(test3) );
-        byte[] test3out = serpent.linearTransform(test3);
-        System.out.println( Hex.toString(test3out) );
-        System.out.println( Hex.toString(serpent.invLinearTransform(test3out)) );
-        System.out.println();
     }
 }//Serpent.java
 
