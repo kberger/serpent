@@ -246,15 +246,48 @@ java Serpent input.txt output.txt 00000000000000000000000000000000 0 e
 java Serpent input.txt output.txt 00000000000000000000000000000000 0 d
 
 \end{lstlisting}
-Each of these runs use a key of all ``0's" and a plaintext of all ``0's." Please note that these values match the values specified at: http://www.cs.technion.ac.il/~biham/Reports/Serpent/Serpent-256-128.verified.test-vectors
+Each of these runs use a key of all ``0's" and a plaintext of all ``0's." Please note that these values match the values specified at: http://www.cs.technion.ac.il/~biham/Reports/Serpent/Serpent-256-128.verified.test-vectors.  The runs that use input and output files operate on the contents of said files.
 \section{Optimized Code}
-The two most substantial optimizations made were to the functions initPermutation and finalPermutation. Both involved looping through every single bit in the data block, accessing values in lookup tables each time, and both functions are used many times, in the linearTransformation function as well as the getRoundKey function. The loops and lookup tables were eliminated from each function, assigning all the values directly instead, with one statement per byte in the block. This improved execution time by about 30\%. Other minor modifications were made across other functions to eliminate unnecessary looping or array creation.
 \subsection{Timing Results}
 \subsubsection{Total Running Time with no JIT compiler}
-\subsubsection{Runtime Profiles of over 100 Seconds}
-\subsection{Analysis}
-\subsection{Example Runs}
 
+\subsubsection{Runtime Profiles of over 100 Seconds}
+\$ java -Xint -Xprof SerpentOptimized 100000
+\newline d3f68d0623563be822d68dde8f4ad282 
+\newline Flat profile of 96.98 secs (9548 total ticks): main
+\newline   Interpreted\tab +\tab native\tab   Method                        
+\newline  49.8\tab\%  4758\tab  +\tab     0\tab    SerpentOptimized.initPermutation
+\newline  21.7\tab\%  2071\tab  +\tab     0\tab    SerpentOptimized.sBox
+\newline  18.3\tab\%  1743\tab  +\tab     0\tab    SerpentOptimized.getRoundKey
+\newline   5.4\tab\%   518\tab  +\tab     0\tab    SerpentOptimized.setKey
+\newline   4.2\tab\%   401\tab  +\tab     0\tab    SerpentOptimized.finalPermutation
+\newline   0.6\tab\%    55\tab  +\tab     0\tab    SerpentOptimized.encrypt
+\newline   0.0\tab\%     0\tab  +\tab     1\tab    java.io.UnixFileSystem.getBooleanAttributes0
+\newline   0.0\tab\%     1\tab  +\tab     0\tab    java.nio.ByteBuffer.wrap
+\newline 100.0\tab\%  9547\tab  +\tab     1\tab    Total interpreted
+\newline\$ java -Xint -agentlib:hprof=cpu=samples,depth=10 SerpentOptimized 100000
+\newline d3f68d0623563be822d68dde8f4ad282
+\newline Dumping CPU usage by sampling running threads ... done.
+\newline real	1m38.545s
+\newline user	1m38.274s
+\newline sys	0m0.376s
+\newline rank\tab   self\tab  accum\tab   count\tab trace\tab method
+\newline    1\tab 11.83\tab\% 11.83\tab\%    1140\tab 300041\tab SerpentOptimized.initPermutation
+\newline    2\tab 11.09\tab\% 22.92\tab\%    1069\tab 300028\tab SerpentOptimized.sBox
+\newline    3\tab 10.58\tab\% 33.50\tab\%    1020\tab 300031\tab SerpentOptimized.getRoundKey
+\newline    4\tab  9.81\tab\% 43.31\tab\%     946\tab 300026\tab SerpentOptimized.initPermutation
+\newline    5\tab  7.67\tab\% 50.98\tab\%     739\tab 300035\tab SerpentOptimized.sBox
+\newline    6\tab  3.41\tab\% 54.39\tab\%     329\tab 300027\tab SerpentOptimized.finalPermutation
+\newline    7\tab  3.29\tab\% 57.68\tab\%     317\tab 300042\tab SerpentOptimized.getRoundKey
+\newline    8\tab  2.07\tab\% 59.76\tab\%     200\tab 300064\tab SerpentOptimized.setKey
+\newline    9\tab  1.65\tab\% 61.41\tab\%     159\tab 300059\tab SerpentOptimized.setKey
+\newline   10\tab  1.20\tab\% 62.61\tab\%     116\tab 300082\tab SerpentOptimized.encrypt
+\newline   11\tab  0.55\tab\% 63.16\tab\%      53\tab 300148\tab java.nio.ByteBuffer.wrap
+
+\subsection{Analysis}
+The two most substantial optimizations made were to the functions initPermutation and finalPermutation. Both involved looping through every single bit in the data block, accessing values in lookup tables each time, and both functions are used many times, in the linearTransformation function as well as the getRoundKey function. The loops and lookup tables were eliminated from each function, assigning all the values directly instead, with one statement per byte in the block. This improved execution time by about 30\%. Other minor modifications were made across other functions to eliminate unnecessary looping or array creation.
+\subsection{Example Runs}
+These are the same as above, except with SerpentOptimized instead of Serpent.
 \section{Division of Labor}
 \begin{itemize}
  \item Nicholas Sereni
@@ -280,41 +313,7 @@ The two most substantial optimizations made were to the functions initPermutatio
  \end{itemize}
 \end{itemize}
 
-\section{Manuals}
-<<<<<<< HEAD
-This code is designed to be run on the CS machines. Before compiling and running, your classpath must be edited with the following line(if using bash):
-\begin{lstlisting}
-export CLASSPATH=.:/home/fac/ark/public_html/pj/lib
-\end{lstlisting}
-If you are not on the CS machines, you must download and extract the parallel java library .jar from:
-\begin{lstlisting}
-http://www.cs.rit.edu/~ark/pj.shtml#download
-\end{lstlisting}
-and set your classpath in a similar fashion.  Once this has been accomplished, the source can be compiled in two fashions:
-\begin{lstlisting}
-javac Serpent.java
-
-javac SerpentOptimized.java
-\end{lstlisting}
-These commands compile the unoptimized and optimized versions respectively. Each version can be run in different modes.  The most simple version is used for timing metrics and only takes an integer as in input which specifies the number of runs to perform.  The command will look like this:
-
-\begin{lstlisting}
-java Serpent <numRuns>
-
-java SerpentOptimized <numRuns>
-\end{lstlisting}
-
-The next option allows for encryption and decryption of a file. The format for this option is:
-
-\begin{lstlisting}
-java Serpent <intput_file> <output_file> <key> <nonce> <e/d>
-
-java SerpentOptimized <intput_file> <output_file> <key> <nonce> <e/d>
-\end{lstlisting}
-
-In these cases the key must be specified with 32 hex characters on the command line and the nonce is an integer. E specified\s encryption and D specifies decryption.
-=======
-\subsection{Developer's Guide}
+\section{Developer's Guide}
   If the source code has been removed from the given archive, then all that is required is BlockCipher.java and Serpent.java (or SerpentOptimized.java to run the optimized code).  Execute the following command to compile the program:
   \begin{verbatim}
   	javac -classpath <path to Parallel Java library> BlockCipher.java Serpent.java
@@ -334,7 +333,6 @@ In these cases the key must be specified with 32 hex characters on the command l
   \begin{verbatim}
   	java Serpent cat.jpg cat.encrypt 112233445566778899aabbccddeeff 12345 e
   \end{verbatim}
->>>>>>> 5390a86705ad24b0a63611491f43c63993305d9a
 
 %------------------------------------------------
 \section{Source Code}
@@ -1348,6 +1346,9 @@ Anderson, R., Biham, E., \& Knudsen, L. (1998).
 \newblock Serpent: A proposal for the advanced encryption standard.
 \newblock {\em NIST AES Proposal}, 1–23. Retrieved from ftp://ftp-prod-srv04.it.su.se/pub/security/docs/crypt/Ross\_Anderson/serpent.pdf
 
+Images:
+\bibitem http://en.wikipedia.org/wiki/Serpent\_(cipher)
+\bibitem http://csrc.nist.gov/archive/aes/round2/comments/20000513-pbora.pdf
 \end{thebibliography}
 
 %----------------------------------------------------------------------------------------
