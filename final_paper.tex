@@ -288,6 +288,12 @@ Each of these runs use a key of all ``0's" and a plaintext of all ``0's." Please
 The two most substantial optimizations made were to the functions initPermutation and finalPermutation. Both involved looping through every single bit in the data block, accessing values in lookup tables each time, and both functions are used many times, in the linearTransformation function as well as the getRoundKey function. The loops and lookup tables were eliminated from each function, assigning all the values directly instead, with one statement per byte in the block. This improved execution time by about 30\%. Other minor modifications were made across other functions to eliminate unnecessary looping or array creation.
 \subsection{Example Runs}
 These are the same as above, except with SerpentOptimized instead of Serpent.
+
+\section{What We Learned}
+This project provided a very in-depth experience with block ciphers. We chose to implement our project in Java. This proved difficult, but taught us a lot about coding cryptographic functions in Java, especially the use of Big and Little endian. 
+\section{Future Work}
+Because this design has been so optimized to work in parallel, a future project should be implementing a parallel design. This could be done in hardware for very hih performance. It would also be interesting to implement this in a parallel language such as CUDA. Though there might not be much speedup with block sizes of 128 bits, perhaps a larger block size could be implemented to take advantage of CUDA's multiple threads.
+
 \section{Division of Labor}
 \begin{itemize}
  \item Nicholas Sereni
